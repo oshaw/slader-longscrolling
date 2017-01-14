@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name        		slader-crawler
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0
+// @version    		    0.1.0
 // @author				Oscar Shaw
-// @include				*.slader.com/*
+// @include				*://slader.*
 // @grant				GM_xmlhttpRequest
 // @require				http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at				document-start
+// @noframes
 // ==/UserScript==
 
 function tag(str_tag)        {
@@ -43,25 +44,20 @@ function numeric(char_input) {
 	
 	return ("1234567890".indexOf(char_input) != -1); 
 }
-function request(url, anon)  {
-	
-	console.log("Requesting " + url);
+function get(url, anon)      {
 	
 	var xhr	= new XMLHttpRequest();
 	xhr.onload = function() { anon(this.responseText); };
 	xhr.open("GET", url, true);
 	xhr.send();
 }
-function gmRequest(url_input, anon) {
+function gmGet(url_input, anon) {
 	
 	GM_xmlhttpRequest({
 		
 		method: "GET",
 		url:    url_input,
-		onload: function(kvp) {
-			
-			anon(kvp.response);
-		}
+		onload: function(kvp) { anon(kvp.responseText); }
 	});
 }
 function trimSpaces(str)     {
@@ -93,42 +89,152 @@ function urlEncode(url)      {
 	var url_output = "";
 	for (var i=0; i < url.length; i++) {
 		
-		url_output += (url[i] == ' ') ? '+' : url[i];
+		url_output += (url[i] == ' ') ? "+" : url[i];
 	}
 	return url_output;
 }
 
-// http://www.slader.com/search/?include=textbook_index&search_query=stewart
+function func_searchTextbooks(str_query, anon_callback) {
+	
+	GM_xmlhttpRequest({
+		
+		method: "POST",
+		url: (
+		
+			  "http://8bbzgj41nl-dsn.algolia.net/"
+			+ "1/indexes/*/queries?"
+			+ "x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.20.3"
+			+ "&x-algolia-application-id=8BBZGJ41NL"
+			+ "&x-algolia-api-key=ecc53b33402d31d49ed35804e2707bd6"
+		),
+		data: (
+		
+			'{"requests":[{"indexName":"textbook_index",\
+			"params":"query=' + str_query + '&hitsPerPage=10&page=0"}]}'
+		),
+		onload: function(kvp) { anon_callback(JSON.parse(kvp.responseText)); }
+	});
+}
+function func_getTextbookContents(url_textbook) {
+	
+	gmGet(url_textbook, function(html) {
+		
+		var jsects_chapters = (
+		
+			$("<div/>")
+			.html(html)
+			.find(".toc-item")
+		);
+		$.each(jsects_chapters, function(i, sect_chapter) {
+			
+			var jsect_chapter = $("<div/>").html(sect_chapter.innerHTML);
+			var str_name = (trimSpaces(
+			
+				jsect_chapter
+				.find(".chapter").eq(0)
+				.find("h3").eq(0).text()
+				
+			) + ": " + trimSpaces(
+			
+				jsect_chapter
+				.find(".chapter").eq(0)
+				.find("p").eq(0).text())
+				
+			);
+			console.log(str_name);
+			$.each(jsect_chapter.find(".exercise-group"), function(j, tr) {
+				
+				var str_section = "\t";
+				$.each(tr.childNodes, function(k, td) {
+					
+					if (defined(td.innerHTML)) {
+						
+						str_section += td.textContent + " ";
+					}
+				});
+				console.log(str_section);
+			});
+		});
+	});
+}
+function func_getQuestionsOnPage(url_page) {
+	
+	gmGet(url_page, function(html) {
+		
+		var jdivs_questions = (
+		
+			$("<div/>").html(html)
+			.find(".list").children()
+		);
+		
+		$.each(jdivs_questions, function(i, div_question) {
+			
+			var jdiv_question = (
+			
+				$("<div/>").html(div_question)
+				.find(".answer-number").eq(0)
+			);
+			console.log(jdiv_question.text());
+		});
+	});
+}
+function func_getSingleSolution(url_solution) {
+	
+	gmGet(url_solution, function(html) {
+		
+		GM_xmlhttpRequest({
+			
+			method: "GET",
+			url: "http://slader.com" + (
+			
+				$("<div/>").html(html)
+				.find(".left").eq(0)
+				.children().eq(2)
+				.attr("data-url")
+			),
+			headers: { "X-Requested-With": "XMLHttpRequest" },
+			onload: function(kvp) {
+				
+				var jimgs_solutions = (
+				
+					$("<div/>").html(kvp.responseText)
+					.find(".image-large")
+				);
+				
+				$.each(jimgs_solutions, function(i, img_solution) {
+					
+					console.log(img_solution.getAttribute("src"));
+				});
+			}
+		});
+	});
+}
 
-function func_textbookSearch(str_query, anon_callback) {
+function main() {
 	
-	{ var url = urlEncode(
+	func_searchTextbooks("stewart", function(json) {
 		
-		"http://www.slader.com/search/?include=textbook_index&search_query="
-		+ str_query
-	); }
-	
-	gmRequest(url, function(html_results) {
+		var url_textbook = (
+			
+			  "http://slader.com"
+			+ json.results[0].hits[0].get_absolute_url
+		);
 		
+		var url_page = (
+			
+			  "http://slader.com/textbook/"
+			+ "9781285741550-stewart-calculus-early-transcendentals-8th-edition/"
+			+ "33/#exercises"
+		);
 		
+		var url_solution = (
+
+			  "http://slader.com/textbook/"
+			+ "9781285741550-stewart-calculus-early-transcendentals-8th-edition/"
+			+ "33/exercises/1a/#"
+		);
 	});
 }
 
 console.log("Compiled");
-func_textbookSearch("stewart");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+main();
