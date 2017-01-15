@@ -96,7 +96,33 @@ function urlEncode(url)      {
 
 function class_sladerCrawler() {
 	
-	var kvp_textbook = {}
+	var kvp_model    = {
+		
+		str_query: "",
+		textbooks:
+		[
+			{
+				chapters: [
+					{
+						sections: [
+							{
+								questions: [
+									{
+										solutions: []
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+	var url_base     = "http://slader.com";
+	var int_textbook = 0;
+	var int_chapter  = 0;
+	var int_section  = 0;
+	var int_question = 0;
 	
 	function func_viewTextbookSearch() {}
 	function func_viewTextbookResults() {}
@@ -107,6 +133,7 @@ function class_sladerCrawler() {
 	
 	function func_getTextbookResults(str_query, anon_callback) {
 		
+		kvp_model.str_query = str_query;
 		GM_xmlhttpRequest({
 			
 			method: "POST",
@@ -121,9 +148,27 @@ function class_sladerCrawler() {
 			data: (
 			
 				'{"requests":[{"indexName":"textbook_index",\
-				"params":"query=' + str_query + '&hitsPerPage=10&page=0"}]}'
+				"params":"query=' + str_query + '&hitsPerPage=5&page=0"}]}'
 			),
-			onload: function(kvp) { anon_callback(JSON.parse(kvp.responseText)); }
+			onload: function(kvp) {
+				
+				var kvps_results = JSON.parse(kvp.responseText).results[0].hits;
+				
+				$.each(kvps_results, function(i, kvp_result) {
+					
+					kvp_model.textbooks.push({
+						
+						str_name:      kvp_result.title,
+						str_edition:   kvp_result.edition,
+						str_author:    kvp_result.authors_string,
+						int_isbn:      kvp_result.isbn,
+						url_thumbnail: kvp_result.search_thumbnail_large,
+						url_path:      kvp_result.get_absolute_url,
+						chapters:      []
+					});
+				});
+				anon_callback();
+			}
 		});
 	}
 	function func_getTextbookContents(url_textbook, anon_callback) {
@@ -136,57 +181,103 @@ function class_sladerCrawler() {
 				.html(html)
 				.find(".toc-item")
 			);
+			
 			$.each(jsects_chapters, function(i, sect_chapter) {
 				
 				var jsect_chapter = $("<div/>").html(sect_chapter.innerHTML);
-				var str_name = (trimSpaces(
-				
-					jsect_chapter
-					.find(".chapter").eq(0)
-					.find("h3").eq(0).text()
+				kvp_model.textbooks[int_textbook].chapters.push({
 					
-				) + ": " + trimSpaces(
-				
-					jsect_chapter
-					.find(".chapter").eq(0)
-					.find("p").eq(0).text())
+					str_number: i + 1,
+					str_name: trimSpaces(
 					
-				);
-				console.log(str_name);
+						jsect_chapter
+						.find(".chapter").eq(0)
+						.find("p").eq(0).text()
+					),
+					sections: []
+				});
+				
 				$.each(jsect_chapter.find(".exercise-group"), function(j, tr) {
 					
-					var str_section = "\t";
-					$.each(tr.childNodes, function(k, td) {
+					kvp_model.textbooks[int_textbook].chapters[i].sections
+						.push({ questions: [] });
+					
+					kvp_model.textbooks[int_textbook].chapters[i].sections[j]
+						.url_pageStart = url_base + tr.getAttribute("data-url");
+					
+					var jtr = $("<div/>").html(tr.innerHTML);
+					$.each(jtr.find("td"), function(k, td) {
 						
-						if (defined(td.innerHTML)) {
+						switch (k) {
 							
-							str_section += td.textContent + " ";
+							case 0: {
+								
+								kvp_model.textbooks[int_textbook]
+									.chapters[i].sections[j]
+									.str_number = trimSpaces(td.textContent);
+									
+								break;
+							}
+							case 1: {
+								
+								if (defined(trimSpaces(td.textContent))) {
+									
+									kvp_model.textbooks[int_textbook]
+										.chapters[i].sections[j]
+										.str_name = trimSpaces(td.textContent);
+								}
+								break;
+							}
+							case 2: {
+								
+								if (!defined(kvp_model.textbooks[int_textbook]
+									.chapters[i].sections[j]
+									.str_name)) {
+									
+									kvp_model.textbooks[int_textbook]
+										.chapters[i].sections[j]
+										.str_name = trimSpaces(td.textContent);
+								}
+								break;
+							}
+							case 3: {
+								
+								kvp_model.textbooks[int_textbook]
+									.chapters[i].sections[j]
+									.int_pageStart = parseInt(
+									
+									td.textContent.substring(2)
+								);
+								break;
+							}
+							default: break;
 						}
 					});
-					console.log(str_section);
 				});
 			});
+			anon_callback();
 		});
 	}
 	function func_getQuestionsOnPage(url_page, anon_callback) {
 		
 		gmGet(url_page, function(html) {
 			
-			var jdivs_questions = (
-			
-				$("<div/>").html(html)
-				.find(".list").children()
-			);
+			var jdivs_questions = $("<div/>").html(html).find(".list").children();
 			
 			$.each(jdivs_questions, function(i, div_question) {
 				
-				var jdiv_question = (
+				if (i == 0) return;
+				var jdiv_question = $("<div/>").html(div_question);
 				
-					$("<div/>").html(div_question)
-					.find(".answer-number").eq(0)
-				);
-				console.log(jdiv_question.text());
+				kvp_model.textbooks[int_textbook].chapters[int_chapter]
+					.sections[int_section].questions.push({
+					
+					str_number:  jdiv_question.find(".answer-number").eq(0).text(),
+					html_answer: jdiv_question.find(".answer").eq(0).html(),
+					solutions:   []
+				});
 			});
+			anon_callback();
 		});
 	}
 	function func_getSingleSolution(url_solution, anon_callback) {
@@ -198,30 +289,104 @@ function class_sladerCrawler() {
 				method: "GET",
 				url: "https://slader.com" + (
 				
-					$("<div/>").html(html)
-					.find(".left").eq(0)
-					.children().eq(2)
-					.attr("data-url")
+					$("<div/>").html(html).find(".left").eq(0)
+					.children().eq(2).attr("data-url")
 				),
 				headers: { "X-Requested-With": "XMLHttpRequest" },
 				onload: function(kvp) {
 					
-					var jimgs_solutions = (
+					var jartcs_solutions = (
 					
 						$("<div/>").html(kvp.responseText)
-						.find(".image-large")
+						.find("article")
 					);
 					
-					$.each(jimgs_solutions, function(i, img_solution) {
+					$.each(jartcs_solutions, function(i, artc_solution) {
 						
-						console.log(img_solution.getAttribute("src"));
+						kvp_model.textbooks[int_textbook].chapters[int_chapter]
+							.sections[int_section].questions[int_question]
+							.solutions.push({ steps: [] });
+							
+						var jartc_solution = $("<div/>").html(artc_solution);
+						var jdivs_steps = (
+						
+							jartc_solution.find(".solution-row.explanation-row")
+						);
+						
+						$.each(jdivs_steps, function(j, div_step) {
+							
+							kvp_model.textbooks[int_textbook]
+								.chapters[int_chapter].sections[int_section]
+								.questions[int_question].solutions[i]
+								.steps.push({ html_work: "" });
+							
+							var jdivs_cells = (
+								
+								$("<div/>").html(div_step)
+								.find(".solution-content")
+							);
+							
+							$.each(jdivs_cells, function(k, div_cell) {
+								
+								var jlmts = (
+									
+									$("<div/>").html(div_cell)
+									.children().eq(0).children()
+								);
+								
+								$.each(jlmts, function(l, lmt) {
+									
+									var jlmt = $("<div/>").html(lmt);
+									
+									if (lmt.style.display != "none") {
+										
+										if (kvp_model.textbooks[int_textbook]
+											.chapters[int_chapter]
+											.sections[int_section]
+											.questions[int_question]
+											.solutions[i].steps[j]
+											.html_work == "") {
+											
+											kvp_model.textbooks[int_textbook]
+												.chapters[int_chapter]
+												.sections[int_section]
+												.questions[int_question]
+												.solutions[i].steps[j]
+												.html_work = lmt.src;
+										}
+										else {
+											
+											kvp_model.textbooks[int_textbook]
+												.chapters[int_chapter]
+												.sections[int_section]
+												.questions[int_question]
+												.solutions[i].steps[j]
+												.html_explanation = lmt.src;
+										}
+									}
+								});
+							});
+						});
 					});
+					anon_callback();
 				}
 			});
 		});
 	}
 	
-	func_getTextbookSearch("stewart", function(json) {
+	var url = (
+	
+		  "https://slader.com/textbook/"
+		+ "9781285741550-stewart-calculus-early-transcendentals-8th-edition/"
+		+ "19/exercises/2/"
+	);
+	
+	func_getSingleSolution(url, function() {
+		
+		console.log(kvp_model);
+	});
+	
+	/* func_getTextbookSearch("stewart", function(json) {
 		
 		var url_textbook = (
 			
@@ -245,12 +410,12 @@ function class_sladerCrawler() {
 			+ "33/exercises/1a/#"
 		);
 		func_getSingleSolution(url_solution);
-	});
+	}); */
 }
 function main() {
 	
-	window.stop();
-	$("html").html("<head></head><body></body>");
+	//window.stop();
+	//$("html").html("<head></head><body></body>");
 	var obj_sladerCrawler = new class_sladerCrawler();
 }
 
