@@ -93,47 +93,30 @@ function urlEncode(url)      {
 	}
 	return url_output;
 }
+function clearDocument()	 {
+	
+	window.stop();
+	$("html").html("<head></head><body></body>");
+}
 
 function class_sladerCrawler() {
 	
-	var kvp_model    = {
-		
-		str_query: "",
-		textbooks:
-		[
-			{
-				chapters: [
-					{
-						sections: [
-							{
-								questions: [
-									{
-										solutions: []
-									}
-								]
-							}
-						]
-					}
-				]
-			}
-		]
-	}
+	var kvp_model    = {}
 	var url_base     = "http://slader.com";
 	var int_textbook = 0;
 	var int_chapter  = 0;
 	var int_section  = 0;
 	var int_question = 0;
 	
-	function func_viewTextbookSearch() {}
-	function func_viewTextbookResults() {}
-	function func_viewTextbookContents() {}
-	function func_viewQuestionsOnPage() {}
-	function func_viewSingleSolution() {}
-	function func_viewFullScreenSolution() {}
-	
-	function func_getTextbookResults(str_query, anon_callback) {
+	function func_getTextbookResults(str_query) {
 		
-		kvp_model.str_query = str_query;
+		if (!defined(str_query)) return;
+		
+		kvp_model = {
+			
+			str_query: str_query,
+			textbooks: []
+		}
 		GM_xmlhttpRequest({
 			
 			method: "POST",
@@ -153,7 +136,6 @@ function class_sladerCrawler() {
 			onload: function(kvp) {
 				
 				var kvps_results = JSON.parse(kvp.responseText).results[0].hits;
-				
 				$.each(kvps_results, function(i, kvp_result) {
 					
 					kvp_model.textbooks.push({
@@ -161,19 +143,20 @@ function class_sladerCrawler() {
 						str_name:      kvp_result.title,
 						str_edition:   kvp_result.edition,
 						str_author:    kvp_result.authors_string,
-						int_isbn:      kvp_result.isbn,
+						str_isbn:      kvp_result.isbn,
 						url_thumbnail: kvp_result.search_thumbnail_large,
 						url_path:      kvp_result.get_absolute_url,
 						chapters:      []
 					});
 				});
-				anon_callback();
+				func_viewTextbookResults();
 			}
 		});
 	}
-	function func_getTextbookContents(url_textbook, anon_callback) {
+	function func_getTextbookContents(int_textbookIndex) {
 		
-		gmGet(url_textbook, function(html) {
+		int_textbook = int_textbookIndex;
+		gmGet(kvp_model.textbooks[int_textbook].url_path, function(html) {
 			
 			var jsects_chapters = (
 			
@@ -255,10 +238,20 @@ function class_sladerCrawler() {
 					});
 				});
 			});
-			anon_callback();
+			func_viewTextbookContents();
 		});
 	}
-	function func_getQuestionsOnPage(url_page, anon_callback) {
+	function func_getQuestionsInSection() {}
+	function func_getQuestionsOnPage(int_chapterIndex, int_sectionIndex) {
+		
+		int_chapter = int_chapterIndex;
+		int_section = int_sectionIndex;
+		
+		var url_page = (
+			
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section].url_pageStart
+		);
 		
 		gmGet(url_page, function(html) {
 			
@@ -277,11 +270,24 @@ function class_sladerCrawler() {
 					solutions:   []
 				});
 			});
-			anon_callback();
+			func_viewSectionQuestions();
 		});
 	}
-	function func_getSingleSolution(url_solution, anon_callback) {
+	function func_getSingleSolution(int_questionIndex) {
 		
+		int_question = int_questionIndex;
+		
+		var url_solution = (
+		
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section].url_pageStart
+			+
+			"/"
+			+
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section].questions[int_question].str_number
+		);
+		console.log(url_solution);
 		gmGet(url_solution, function(html) {
 			
 			GM_xmlhttpRequest({
@@ -368,54 +374,141 @@ function class_sladerCrawler() {
 							});
 						});
 					});
-					anon_callback();
+					func_viewSingleSolution();
 				}
 			});
 		});
 	}
 	
-	var url = (
-	
-		  "https://slader.com/textbook/"
-		+ "9781285741550-stewart-calculus-early-transcendentals-8th-edition/"
-		+ "19/exercises/2/"
-	);
-	
-	func_getSingleSolution(url, function() {
+	function func_viewTextbookSearch() {
 		
-		console.log(kvp_model);
-	});
-	
-	/* func_getTextbookSearch("stewart", function(json) {
+		clearDocument();
 		
-		var url_textbook = (
+		var inText_search = document.createElement("input"); {
 			
-			  "https://slader.com"
-			+ json.results[0].hits[0].get_absolute_url
-		);
-		func_getTextbookContents(url_textbook);
-		
-		var url_page = (
+			inText_search.type = "text";
+		}
+		var inSub = document.createElement("input"); {
 			
-			  "https://slader.com/textbook/"
-			+ "9781285741550-stewart-calculus-early-transcendentals-8th-edition/"
-			+ "33/#exercises"
-		);
-		func_getQuestionsOnPage(url_page);
+			inSub.type = "submit";
+		}
 		
-		var url_solution = (
-
-			  "https://slader.com/textbook/"
-			+ "9781285741550-stewart-calculus-early-transcendentals-8th-edition/"
-			+ "33/exercises/1a/#"
+		inSub.onclick = function() { func_getTextbookResults(inText_search.value); }
+		
+		document.body.appendChild(inText_search);
+		document.body.appendChild(inSub);
+	}
+	function func_viewTextbookResults() {
+		
+		clearDocument();
+		
+		$.each(kvp_model.textbooks, function(i, kvp_textbook) {
+			
+			var div = document.createElement("div");
+			var p_name = document.createElement("p"); {
+				
+				p_name.textContent = kvp_textbook.str_name;
+			}
+			var p_edition = document.createElement("p"); {
+				
+				p_edition.textContent = kvp_textbook.str_edition;
+			}
+			var p_isbn = document.createElement("p"); {
+				
+				p_isbn.textContent = kvp_textbook.str_isbn;
+			}
+			var img_thumbnail = document.createElement("img"); {
+				
+				img_thumbnail.src = kvp_textbook.url_thumbnail;
+			}
+			
+			div.onclick = function() { func_getTextbookContents(i); }
+			
+			div.appendChild(p_name);
+			div.appendChild(p_edition);
+			div.appendChild(p_isbn);
+			div.appendChild(img_thumbnail);
+			document.body.appendChild(div);
+		});
+	}
+	function func_viewTextbookContents() {
+		
+		clearDocument();
+		
+		$.each(kvp_model.textbooks[int_textbook].chapters, function(i, kvp_chapter) {
+			
+			var div_chapter = document.createElement("div");
+			var p_chapterNumber = document.createElement("p"); {
+				
+				p_chapterNumber.textContent = kvp_chapter.str_number;
+			}
+			var p_chapterName = document.createElement("p"); {
+				
+				p_chapterName.style.fontWeight = "bold";
+				p_chapterName.textContent = kvp_chapter.str_name;
+			}
+			
+			div_chapter.appendChild(p_chapterNumber);
+			div_chapter.appendChild(p_chapterName);
+			document.body.appendChild(div_chapter);
+			
+			$.each(kvp_chapter.sections, function(j, kvp_section) {
+				
+				var div_section = document.createElement("div");
+				var p_sectionNumber = document.createElement("p"); {
+					
+					p_sectionNumber.textContent = kvp_section.str_number;
+				}
+				var p_sectionName = document.createElement("p"); {
+					
+					p_sectionName.textContent = kvp_section.str_name;
+				}
+				
+				div_section.onclick = function() { func_getQuestionsOnPage(i, j); }
+				
+				div_section.appendChild(p_sectionNumber);
+				div_section.appendChild(p_sectionName);
+				document.body.appendChild(div_section);
+			});
+		});
+	}
+	function func_viewSectionQuestions() {
+		
+		clearDocument();
+		
+		var kvps_questions = (
+		
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section].questions
 		);
-		func_getSingleSolution(url_solution);
-	}); */
+		
+		$.each(kvps_questions, function(i, kvp_question) {
+			
+			var div = document.createElement("div");
+			var p_number = document.createElement("p"); {
+				
+				p_number.textContent = kvp_question.str_number;
+			}
+			var div_answer = document.createElement("div"); {
+				
+				div_answer.innerHTML = kvp_question.html_answer;
+			}
+			
+			div.onclick = function() { func_getSingleSolution(i) }
+			
+			div.appendChild(p_number);
+			div.appendChild(div_answer);
+			document.body.appendChild(div);
+		});
+	}
+	function func_viewSingleSolution() {}
+	function func_viewFullScreenSolution() {}
+	
+	func_viewTextbookSearch();
 }
 function main() {
 	
-	//window.stop();
-	//$("html").html("<head></head><body></body>");
+	clearDocument();
 	var obj_sladerCrawler = new class_sladerCrawler();
 }
 
