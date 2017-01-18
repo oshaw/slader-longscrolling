@@ -126,6 +126,7 @@ function class_sladerCrawler() {
 			
 			return "Problems Plus";
 		}
+		else return "Exercises";
 	}
 	
 	function model_getTextbookResults(str_query) {
@@ -261,38 +262,62 @@ function class_sladerCrawler() {
 			view_textbookContents();
 		});
 	}
-	function model_getQuestionsInSection() {
-		
-		
-	}
-	function model_getQuestionsOnPage(int_chapterIndex, int_sectionIndex) {
+	function model_getQuestionsInSection(int_chapterIndex, int_sectionIndex) {
 		
 		int_chapter = int_chapterIndex;
 		int_section = int_sectionIndex;
 		
-		var url_page = (
+		var int_page = (
+			
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section].int_pageStart
+		);
+		var url = kvp_model.textbooks[int_textbook].url_path + int_page;
+		var str_header = func_dirToHeader(
 			
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].url_pageStart
 		);
 		
-		gmGet(url_page, function(html) {
+		var anon_callback = function(int_next) {
+			
+			int_page = int_page + 1;
+			if (int_page == int_next) anon_loopThroughPages();
+			else view_sectionQuestions();
+		}
+		var anon_loopThroughPages = function() {
+			
+			model_getQuestionsOnPage(
+			
+				url_base + kvp_model.textbooks[int_textbook].url_path + int_page,
+				str_header,
+				function(int_next) { anon_callback(int_next) }
+			);
+		}
+		
+		anon_loopThroughPages();
+	}
+	function model_getQuestionsOnPage(url, str_header, anon_callback) {
+		
+		gmGet(url, function(html) {
 			
 			var jdivs_questions = $("<div/>").html(html).find(".list").children();
 			var bool_inSection = false;
 			
 			$.each(jdivs_questions, function(i, div_question) {
 				
+				var bool_isHeader = false;
 				if (div_question.tagName == "H3") {
 					
-					if (div_question.textContent == func_dirToHeader(url_page)) {
+					bool_isHeader = true;
+					if (div_question.textContent == str_header) {
 						
 						bool_inSection = true;
 					}
 					else bool_inSection = false;
 				}
 				
-				if (bool_inSection) {
+				if (bool_inSection && !bool_isHeader) {
 					
 					var jdiv_question = $("<div/>").html(div_question);
 					
@@ -306,8 +331,7 @@ function class_sladerCrawler() {
 				}
 			});
 			
-			console.log(kvp_model);
-			view_sectionQuestions();
+			anon_callback(parseInt($("<div/>").html(html).find(".next").eq(0).text()));
 		});
 	}
 	function model_getSingleSolution(int_questionIndex) {
@@ -501,7 +525,7 @@ function class_sladerCrawler() {
 					p_sectionName.textContent = kvp_section.str_name;
 				}
 				
-				div_section.onclick = function() { model_getQuestionsOnPage(i, j); }
+				div_section.onclick = function() { model_getQuestionsInSection(i, j); }
 				
 				div_section.appendChild(p_sectionNumber);
 				div_section.appendChild(p_sectionName);
