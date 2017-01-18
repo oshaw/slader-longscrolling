@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-crawler
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.1.1
+// @version    		    0.2.2
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -108,7 +108,27 @@ function class_sladerCrawler() {
 	var int_section  = 0;
 	var int_question = 0;
 	
-	function func_getTextbookResults(str_query) {
+	function func_dirToHeader(url) {
+		
+		if (url.indexOf("#concept-check") != -1) {
+			
+			return "Review: Concept Check";
+		}
+		else if (url.indexOf("#review-exercises") != -1) {
+			
+			return "Exercises";
+		}
+		else if (url.indexOf("#review-true-false-quiz") != -1) {
+			
+			return "Review: True-False Quiz";
+		}
+		else if (url.indexOf("#problems-plus") != -1) {
+			
+			return "Problems Plus";
+		}
+	}
+	
+	function model_getTextbookResults(str_query) {
 		
 		if (!defined(str_query)) return;
 		
@@ -149,11 +169,11 @@ function class_sladerCrawler() {
 						chapters:      []
 					});
 				});
-				func_viewTextbookResults();
+				view_textbookResults();
 			}
 		});
 	}
-	function func_getTextbookContents(int_textbookIndex) {
+	function model_getTextbookContents(int_textbookIndex) {
 		
 		int_textbook = int_textbookIndex;
 		gmGet(kvp_model.textbooks[int_textbook].url_path, function(html) {
@@ -238,11 +258,14 @@ function class_sladerCrawler() {
 					});
 				});
 			});
-			func_viewTextbookContents();
+			view_textbookContents();
 		});
 	}
-	function func_getQuestionsInSection() {}
-	function func_getQuestionsOnPage(int_chapterIndex, int_sectionIndex) {
+	function model_getQuestionsInSection() {
+		
+		
+	}
+	function model_getQuestionsOnPage(int_chapterIndex, int_sectionIndex) {
 		
 		int_chapter = int_chapterIndex;
 		int_section = int_sectionIndex;
@@ -256,24 +279,38 @@ function class_sladerCrawler() {
 		gmGet(url_page, function(html) {
 			
 			var jdivs_questions = $("<div/>").html(html).find(".list").children();
+			var bool_inSection = false;
 			
 			$.each(jdivs_questions, function(i, div_question) {
 				
-				if (i == 0) return;
-				var jdiv_question = $("<div/>").html(div_question);
-				
-				kvp_model.textbooks[int_textbook].chapters[int_chapter]
-					.sections[int_section].questions.push({
+				if (div_question.tagName == "H3") {
 					
-					str_number:  jdiv_question.find(".answer-number").eq(0).text(),
-					html_answer: jdiv_question.find(".answer").eq(0).html(),
-					solutions:   []
-				});
+					if (div_question.textContent == func_dirToHeader(url_page)) {
+						
+						bool_inSection = true;
+					}
+					else bool_inSection = false;
+				}
+				
+				if (bool_inSection) {
+					
+					var jdiv_question = $("<div/>").html(div_question);
+					
+					kvp_model.textbooks[int_textbook].chapters[int_chapter]
+						.sections[int_section].questions.push({
+						
+						str_number:  jdiv_question.find(".answer-number").eq(0).text(),
+						html_answer: jdiv_question.find(".answer").eq(0).html(),
+						solutions:   []
+					});
+				}
 			});
-			func_viewSectionQuestions();
+			
+			console.log(kvp_model);
+			view_sectionQuestions();
 		});
 	}
-	function func_getSingleSolution(int_questionIndex) {
+	function model_getSingleSolution(int_questionIndex) {
 		
 		int_question = int_questionIndex;
 		
@@ -374,13 +411,13 @@ function class_sladerCrawler() {
 							});
 						});
 					});
-					func_viewSingleSolution();
+					view_singleSolution();
 				}
 			});
 		});
 	}
 	
-	function func_viewTextbookSearch() {
+	function view_textbookSearch() {
 		
 		clearDocument();
 		
@@ -393,12 +430,12 @@ function class_sladerCrawler() {
 			inSub.type = "submit";
 		}
 		
-		inSub.onclick = function() { func_getTextbookResults(inText_search.value); }
+		inSub.onclick = function() { model_getTextbookResults(inText_search.value); }
 		
 		document.body.appendChild(inText_search);
 		document.body.appendChild(inSub);
 	}
-	function func_viewTextbookResults() {
+	function view_textbookResults() {
 		
 		clearDocument();
 		
@@ -422,7 +459,7 @@ function class_sladerCrawler() {
 				img_thumbnail.src = kvp_textbook.url_thumbnail;
 			}
 			
-			div.onclick = function() { func_getTextbookContents(i); }
+			div.onclick = function() { model_getTextbookContents(i); }
 			
 			div.appendChild(p_name);
 			div.appendChild(p_edition);
@@ -431,7 +468,7 @@ function class_sladerCrawler() {
 			document.body.appendChild(div);
 		});
 	}
-	function func_viewTextbookContents() {
+	function view_textbookContents() {
 		
 		clearDocument();
 		
@@ -464,7 +501,7 @@ function class_sladerCrawler() {
 					p_sectionName.textContent = kvp_section.str_name;
 				}
 				
-				div_section.onclick = function() { func_getQuestionsOnPage(i, j); }
+				div_section.onclick = function() { model_getQuestionsOnPage(i, j); }
 				
 				div_section.appendChild(p_sectionNumber);
 				div_section.appendChild(p_sectionName);
@@ -472,7 +509,7 @@ function class_sladerCrawler() {
 			});
 		});
 	}
-	function func_viewSectionQuestions() {
+	function view_sectionQuestions() {
 		
 		clearDocument();
 		
@@ -494,17 +531,16 @@ function class_sladerCrawler() {
 				div_answer.innerHTML = kvp_question.html_answer;
 			}
 			
-			div.onclick = function() { func_getSingleSolution(i) }
+			div.onclick = function() { model_getSingleSolution(i) }
 			
 			div.appendChild(p_number);
 			div.appendChild(div_answer);
 			document.body.appendChild(div);
 		});
 	}
-	function func_viewSingleSolution() {}
-	function func_viewFullScreenSolution() {}
+	function view_singleSolution() {}
 	
-	func_viewTextbookSearch();
+	view_textbookSearch();
 }
 function main() {
 	
