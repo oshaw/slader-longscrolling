@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-crawler
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.2.3
+// @version    		    0.2.4
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -321,10 +321,12 @@ function class_sladerCrawler() {
 					var str_number = jdiv_question.find(".answer-number").eq(0).text();
 					str_number = str_number.substring(0, str_number.indexOf('.'));
 					
+					var url_solutions = div_question.getAttribute("data-url");
 					var kvp_question = ({
 						
-						str_number:  str_number,
-						solutions:   []
+						str_number:    str_number,
+						url_solutions: url_base + url_solutions,
+						solutions:     []
 					});
 					
 					var jp_answer = (jdiv_question.find(".answer").eq(0));
@@ -360,13 +362,9 @@ function class_sladerCrawler() {
 		var url_solution = (
 		
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
-			.sections[int_section].url_pageStart
-			+ "/" +
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
-			.sections[int_section].questions[int_question].str_number
-			+ "/#"
+			.sections[int_section].questions[int_question].url_solutions
 		);
-		console.log(url_solution);
+		
 		gmGet(url_solution, function(html) {
 			
 			GM_xmlhttpRequest({
@@ -510,7 +508,7 @@ function class_sladerCrawler() {
 							}
 						});
 					});
-					console.log(kvp_model);
+					view_singleSolution();
 				}
 			});
 		});
@@ -664,10 +662,70 @@ function class_sladerCrawler() {
 	}
 	function view_singleSolution() {
 		
-		console.log(kvp_model);
+		clearDocument();
+		
+		var kvps_solutions = (
+			
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section].questions[int_question].solutions
+		);
+		
+		$.each(kvps_solutions, function(i, kvp_solution) {
+			
+			var div_solution = document.createElement("div");
+			
+			$.each(kvp_solution.steps, function(j, kvp_step) {
+				
+				var div_step = document.createElement("div");
+				
+				if (defined(kvp_step.str_work)) {
+					
+					var p_work = document.createElement("p");
+					p_work.textContent = kvp_step.str_work;
+					div_step.appendChild(p_work);
+				}
+				else {
+					
+					var img_work = document.createElement("img");
+					img_work.src = kvp_step.url_imgWork;
+					div_step.appendChild(img_work);
+				}
+				
+				if (defined(kvp_step.str_explanation)) {
+					
+					var p_explanation = document.createElement("p");
+					p_explanation.textContent = kvp_step.str_explanation;
+					div_step.appendChild(p_explanation);
+				}
+				else {
+					
+					var img_explanation = document.createElement("img");
+					img_explanation.src = kvp_step.url_imgExplanation;
+					div_step.appendChild(img_explanation);
+				}
+				
+				div_solution.appendChild(div_step);
+			});
+			
+			document.body.appendChild(div_solution);
+			
+			if (defined(kvp_solution.str_answer)) {
+				
+				var p_answer = document.createElement("p");
+				p_answer.textContent = kvp_solution.str_answer;
+				document.body.appendChild(p_answer);
+			}
+			else {
+				
+				var img_answer = document.createElement("img");
+				img_answer.src = kvp_solution.url_imgAnswer;
+				document.body.appendChild(img_answer);
+			}
+		});
 	}
 	
 	view_textbookSearch();
+	
 }
 function main() {
 	
