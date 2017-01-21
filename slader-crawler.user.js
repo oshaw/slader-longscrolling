@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-crawler
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.2.2
+// @version    		    0.2.3
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -279,19 +279,18 @@ function class_sladerCrawler() {
 			.sections[int_section].url_pageStart
 		);
 		
-		var anon_callback = function(int_next) {
-			
-			int_page = int_page + 1;
-			if (int_page == int_next) anon_loopThroughPages();
-			else view_sectionQuestions();
-		}
 		var anon_loopThroughPages = function() {
 			
 			model_getQuestionsOnPage(
 			
 				url_base + kvp_model.textbooks[int_textbook].url_path + int_page,
 				str_header,
-				function(int_next) { anon_callback(int_next) }
+				function(int_next) {
+					
+					int_page = int_page + 1;
+					if (int_page == int_next) anon_loopThroughPages();
+					else view_sectionQuestions();
+				}
 			);
 		}
 		
@@ -316,18 +315,38 @@ function class_sladerCrawler() {
 					}
 					else bool_inSection = false;
 				}
-				
 				if (bool_inSection && !bool_isHeader) {
 					
 					var jdiv_question = $("<div/>").html(div_question);
+					var str_number = jdiv_question.find(".answer-number").eq(0).text();
+					str_number = str_number.substring(0, str_number.indexOf('.'));
 					
-					kvp_model.textbooks[int_textbook].chapters[int_chapter]
-						.sections[int_section].questions.push({
+					var kvp_question = ({
 						
-						str_number:  jdiv_question.find(".answer-number").eq(0).text(),
-						html_answer: jdiv_question.find(".answer").eq(0).html(),
+						str_number:  str_number,
 						solutions:   []
 					});
+					
+					var jp_answer = (jdiv_question.find(".answer").eq(0));
+					
+					$.each(jp_answer.children(), function(j, lmt) {
+						
+						if (lmt.tagName == "IMG") {
+							
+							if (lmt.src.indexOf("large") != -1) {
+								
+								kvp_question.url_imgAnswer = lmt.src;
+							}
+						}
+					});
+					
+					if (!defined(kvp_question.url_imgAnswer)) {
+						
+						kvp_question.str_answer = trimSpaces(jp_answer.text());
+					}
+					
+					kvp_model.textbooks[int_textbook].chapters[int_chapter]
+						.sections[int_section].questions.push(kvp_question);
 				}
 			});
 			
@@ -342,11 +361,10 @@ function class_sladerCrawler() {
 		
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].url_pageStart
-			+
-			"/"
-			+
+			+ "/" +
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].questions[int_question].str_number
+			+ "/#"
 		);
 		console.log(url_solution);
 		gmGet(url_solution, function(html) {
@@ -385,7 +403,13 @@ function class_sladerCrawler() {
 							kvp_model.textbooks[int_textbook]
 								.chapters[int_chapter].sections[int_section]
 								.questions[int_question].solutions[i]
-								.steps.push({ html_work: "" });
+								.steps.push({
+									
+									url_imgWork:        "",
+									str_work:           "",
+									url_imgExplanation: "",
+									str_explanation:    ""
+								});
 							
 							var jdivs_cells = (
 								
@@ -401,41 +425,92 @@ function class_sladerCrawler() {
 									.children().eq(0).children()
 								);
 								
+								var kvp_step = (
+								
+									kvp_model.textbooks[int_textbook]
+									.chapters[int_chapter]
+									.sections[int_section]
+									.questions[int_question]
+									.solutions[i].steps[j]
+								);
+								
 								$.each(jlmts, function(l, lmt) {
 									
-									var jlmt = $("<div/>").html(lmt);
-									
-									if (lmt.style.display != "none") {
+									switch (lmt.tagName) {
 										
-										if (kvp_model.textbooks[int_textbook]
-											.chapters[int_chapter]
-											.sections[int_section]
-											.questions[int_question]
-											.solutions[i].steps[j]
-											.html_work == "") {
+										case "IMG": {
 											
-											kvp_model.textbooks[int_textbook]
-												.chapters[int_chapter]
-												.sections[int_section]
-												.questions[int_question]
-												.solutions[i].steps[j]
-												.html_work = lmt.src;
-										}
-										else {
+											if (lmt.src.indexOf("large") == -1) break;
 											
-											kvp_model.textbooks[int_textbook]
-												.chapters[int_chapter]
-												.sections[int_section]
-												.questions[int_question]
-												.solutions[i].steps[j]
-												.html_explanation = lmt.src;
+											if (!defined(kvp_step.url_imgWork) && !defined(kvp_step.p_work)) {
+												
+												kvp_step.url_imgWork = lmt.src;
+											}
+											else kvp_step.url_imgExplanation = lmt.src;
+											
+											break;
 										}
+										case "P": {
+											
+											if (lmt.classList.contains("center")) break;
+											
+											if (!defined(kvp_step.url_imgWork) && !defined(kvp_step.p_work)) {
+												
+												kvp_step.str_work = trimSpaces(lmt.textContent);
+											}
+											else kvp_step.str_explanation = trimSpaces(lmt.textContent);
+											
+											break;
+										}
+										case "A": {
+											
+											if (!defined(kvp_step.url_imgWork) && !defined(kvp_step.p_work)) {
+												
+												kvp_step.url_imgWork = lmt.getElementsByTagName("IMG")[0].src;
+											}
+											else kvp_step.url_imgExplanation = lmt.getElementsByTagName("IMG")[0].src;
+											
+											break;
+										}
+										default: break;
 									}
 								});
 							});
 						});
+						
+						var jlmts_answerElements = (
+						
+							jartc_solution
+							.find(".solution-row.result-row").eq(0)
+							.find(".solution-content").eq(0).children()
+						);
+						var kvp_solution = (
+						
+							kvp_model.textbooks[int_textbook]
+							.chapters[int_chapter].sections[int_section]
+							.questions[int_question].solutions[i]
+						);
+						
+						$.each(jlmts_answerElements, function(j, lmt) {
+							
+							switch (lmt.tagName) {
+								
+								case "IMG": {
+									
+									if (lmt.src.indexOf("large") == -1) break;
+									kvp_solution.url_imgAnswer = lmt.src;
+									break;
+								}
+								case "P": {
+									
+									kvp_solution.str_answer = trimSpaces(lmt.textContent);
+									break;
+								}
+								default: break;
+							}
+						});
 					});
-					view_singleSolution();
+					console.log(kvp_model);
 				}
 			});
 		});
@@ -452,6 +527,7 @@ function class_sladerCrawler() {
 		var inSub = document.createElement("input"); {
 			
 			inSub.type = "submit";
+			inSub.style.cursor = "pointer";
 		}
 		
 		inSub.onclick = function() { model_getTextbookResults(inText_search.value); }
@@ -465,7 +541,10 @@ function class_sladerCrawler() {
 		
 		$.each(kvp_model.textbooks, function(i, kvp_textbook) {
 			
-			var div = document.createElement("div");
+			var div = document.createElement("div"); {
+				
+				div.style.cursor = "pointer";
+			}
 			var p_name = document.createElement("p"); {
 				
 				p_name.textContent = kvp_textbook.str_name;
@@ -515,7 +594,10 @@ function class_sladerCrawler() {
 			
 			$.each(kvp_chapter.sections, function(j, kvp_section) {
 				
-				var div_section = document.createElement("div");
+				var div_section = document.createElement("div"); {
+					
+					div_section.style.cursor = "pointer";
+				}
 				var p_sectionNumber = document.createElement("p"); {
 					
 					p_sectionNumber.textContent = kvp_section.str_number;
@@ -542,27 +624,48 @@ function class_sladerCrawler() {
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].questions
 		);
+		console.log(
 		
+			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			.sections[int_section]
+		);
 		$.each(kvps_questions, function(i, kvp_question) {
 			
-			var div = document.createElement("div");
+			var div = document.createElement("div"); {
+				
+				div.style.cursor = "pointer";
+			}
 			var p_number = document.createElement("p"); {
 				
 				p_number.textContent = kvp_question.str_number;
 			}
 			var div_answer = document.createElement("div"); {
 				
-				div_answer.innerHTML = kvp_question.html_answer;
+				if (defined(kvp_question.str_answer)) {
+					
+					var p_answer = document.createElement("p");
+					p_answer.textContent = kvp_question.str_answer;
+					div_answer.appendChild(p_answer);
+				}
+				else {
+					
+					var img_answer = document.createElement("img");
+					img_answer.src = kvp_question.url_imgAnswer;
+					div_answer.appendChild(img_answer);
+				}
 			}
 			
-			div.onclick = function() { model_getSingleSolution(i) }
+			div.onclick = function() { model_getSingleSolution(i); }
 			
 			div.appendChild(p_number);
 			div.appendChild(div_answer);
 			document.body.appendChild(div);
 		});
 	}
-	function view_singleSolution() {}
+	function view_singleSolution() {
+		
+		console.log(kvp_model);
+	}
 	
 	view_textbookSearch();
 }
