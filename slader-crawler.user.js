@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-crawler
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.2.4
+// @version    		    0.2.5
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
