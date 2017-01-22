@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.2.5
+// @version    		    0.2.6
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -93,7 +93,7 @@ function urlEncode(url)      {
 	}
 	return url_output;
 }
-function clearBody()	 {
+function clearBody()	     {
 	
 	window.stop();
 	$("body").html("");
@@ -583,6 +583,22 @@ function class_sladerCrawler() {
 		
 		clearBody();
 		document.title = kvp_model.textbooks[int_textbook].str_name;
+		var anon = function() { model_getTextbookResults($("#intext").val()); };
+		
+		{ $("body").append(
+			
+			  '<input id="intext" type="text"></input>'
+			+ '<input id="insub" type="submit"></input'
+		); }
+		$("#intext").focus();
+		$("#intext").val(kvp_model.str_query);
+		$("#insub").click(anon);
+		$("#insub").css("cursor", "pointer");
+		
+		$(document).keypress(function(int_keycode) {
+			
+			if (int_keycode.which == 13 && $("#intext").is(':focus')) anon();
+		});
 		
 		$.each(kvp_model.textbooks[int_textbook].chapters, function(i, kvp_chapter) {
 			
@@ -630,6 +646,10 @@ function class_sladerCrawler() {
 			.sections[int_section].str_number
 			
 		); }
+		
+		$("body").append('<p id="p_back">Back</p>');
+		$("#p_back").css("cursor", "pointer");
+		$("#p_back").click(function() { view_textbookContents(); });
 	}
 	function view_updateSectionQuestions() {
 		
@@ -668,7 +688,7 @@ function class_sladerCrawler() {
 	function view_solutions() {
 		
 		clearBody();
-		document.title = (
+		{ document.title = (
 		
 			"Section " 
 			+ kvp_model.textbooks[int_textbook].chapters[int_chapter]
@@ -676,14 +696,21 @@ function class_sladerCrawler() {
 			+ " Question "
 			+ kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].questions[int_question].str_number
-		);
+		); }
 		
-		var kvps_solutions = (
+		$("body").append('<p id="p_back">Back</p>');
+		$("#p_back").css("cursor", "pointer");
+		$("#p_back").click(function() {
+			
+			view_questionListHeader();
+			view_updateSectionQuestions();
+		});
+		
+		{ var kvps_solutions = (
 			
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].questions[int_question].solutions
-		);
-		
+		); }
 		$.each(kvps_solutions, function(i, kvp_solution) {
 			
 			var div_solution = document.createElement("div");
