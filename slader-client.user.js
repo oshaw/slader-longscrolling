@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        		slader-crawler
+// @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
 // @version    		    0.2.5
 // @author				Oscar Shaw
