@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.3.0
+// @version    		    0.3.1
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -102,6 +102,15 @@ function clearBody()	     {
 function class_sladerCrawler() {
 	
 	var kvp_model			= {}
+	var kvp_colors = {
+		
+		css_black		: "rgb(38, 38, 38)",
+		css_graySearch	: "rgb(127, 127, 127)",
+		css_grayText	: "rgb(191, 191, 191)",
+		css_grayLine	: "rgb(217, 217, 217)",
+		css_grayBg		: "rgb(242, 242, 242)",
+		css_white		: "rgb(255, 255, 255)"
+	}
 	var url_base			= "http://slader.com";
 	var int_textbook		= -1;
 	var int_chapter			= -1;
@@ -129,7 +138,6 @@ function class_sladerCrawler() {
 		}
 		else return "Exercises";
 	}
-	
 	function model_getTextbookResults(str_query) {
 		
 		if (!def(str_query)) return;
@@ -526,17 +534,6 @@ function class_sladerCrawler() {
 		});
 	}
 	
-	
-	var kvp_colors = {
-		
-		css_black		: "rgb(38, 38, 38)",
-		css_graySearch	: "rgb(127, 127, 127)",
-		css_grayText	: "rgb(191, 191, 191)",
-		css_grayLine	: "rgb(217, 217, 217)",
-		css_grayBg		: "rgb(242, 242, 242)",
-		css_white		: "rgb(255, 255, 255)"
-	}
-	
 	function view_formatTextLarge(jp, bool_bold = true) {
 		
 		jp.css({
@@ -568,7 +565,6 @@ function class_sladerCrawler() {
 			$(this).css("backgroundColor", kvp_colors.css_white);
 		});
 	}
-	
 	function view_backHeader(str_title, str_subtitle, anon_onClick) {
 		
 		{ $("body").append(
@@ -1023,7 +1019,7 @@ function class_sladerCrawler() {
 				
 			); }
 			
-			if (i != 1) {
+			if (i != 0) {
 				
 				$(".div_solution").eq(i).css({
 					
@@ -1033,7 +1029,6 @@ function class_sladerCrawler() {
 			
 			$(".div_solution").eq(i).css({
 				
-				"border-top"		: "1px solid " + kvp_colors.css_grayLine,
 				"padding-bottom"	: "5px",
 				"padding-top"		: "5px"
 			});
