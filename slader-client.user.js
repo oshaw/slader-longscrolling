@@ -101,12 +101,12 @@ function clearBody()	     {
 
 function class_sladerCrawler() {
 	
-	var kvp_model    = {}
-	var url_base     = "http://slader.com";
-	var int_textbook = -1;
-	var int_chapter  = -1;
-	var int_section  = -1;
-	var int_question = -1;
+	var kvp_model		= {}
+	var url_base		= "http://slader.com";
+	var int_textbook	= -1;
+	var int_chapter		= -1;
+	var int_section		= -1;
+	var int_question	= -1;
 	
 	function func_dirToHeader(url) {
 		
@@ -165,7 +165,7 @@ function class_sladerCrawler() {
 						str_edition:   kvp_result.edition,
 						str_author:    kvp_result.authors_string,
 						str_isbn:      kvp_result.isbn,
-						url_thumbnail: kvp_result.search_thumbnail_large,
+						url_thumbnail: kvp_result.search_thumbnail,
 						url_path:      kvp_result.get_absolute_url,
 						chapters:      []
 					});
@@ -286,6 +286,7 @@ function class_sladerCrawler() {
 			
 				url_base + kvp_model.textbooks[int_textbook].url_path + int_page,
 				str_header,
+				int_page,
 				function(int_next) {
 					
 					int_page = int_page + 1;
@@ -296,7 +297,7 @@ function class_sladerCrawler() {
 		view_questionListHeader();
 		anon_loopThroughPages();
 	}
-	function model_getQuestionsOnPage(url, str_header, anon_callback) {
+	function model_getQuestionsOnPage(url, str_header, int_page, anon_callback) {
 		
 		gmGet(url, function(html) {
 			
@@ -324,11 +325,12 @@ function class_sladerCrawler() {
 					var url_solutions = div_question.getAttribute("data-url");
 					var kvp_question = ({
 						
-						str_number:    str_number,
-						url_solutions: url_base + url_solutions,
-						solutions:     []
+						str_number		: str_number,
+						url_solutions	: url_base + url_solutions,
+						solutions		: []
 					});
 					
+					if (i == 1) kvp_question.int_page = int_page;
 					var jp_answer = (jdiv_question.find(".answer").eq(0));
 					
 					$.each(jp_answer.children(), function(j, lmt) {
@@ -515,131 +517,230 @@ function class_sladerCrawler() {
 		});
 	}
 	
-	function view_textbookSearch() {
+	
+	var kvp_colors = {
+		
+		css_black		: "rgb(38, 38, 38)",
+		css_graySearch	: "rgb(127, 127, 127)",
+		css_grayText	: "rgb(191, 191, 191)",
+		css_grayLine	: "rgb(217, 217, 217)",
+		css_grayBg		: "rgb(242, 242, 242)"
+		
+	}
+	
+	function view_formatTextLarge(jp, bool_bold = true) {
+		
+		jp.css({
+			
+			"color"			: kvp_colors.css_black,
+			"font-size"		: "16px",
+			"font-weight"	: (bool_bold) ? "bold" : "normal"
+		});
+	}
+	function view_formatTextSmall(jp, bool_gray = false) {
+		
+		jp.css({
+			
+			"color"			: (bool_gray)
+							? kvp_colors.css_grayText
+							: kvp_colors.css_black,
+							
+			"font-size"		: "12px"
+		});
+	}
+	
+	function view_textbookSearch(str_query = "") {
 		
 		clearBody();
-		document.title = "Slader Crawler";
-		
-		var anon = function() { model_getTextbookResults($("#intext").val()); };
-		
 		{ $("body").append(
 			
-			  '<input id="intext" type="text"></input>'
-			+ '<input id="insub" type="submit"></input'
+			  '<div id="div_header">'
+			+     '<img id="img_search" src="http://placehold.it/45">'
+			+	  '<div id="div_intextWrapper">'
+			+         '<input id="intext" type="text" placeholder="Search textbooks">'
+			+		  '</input>'
+			+     '</div>'
+			+ '</div>'
 		); }
-		$("#intext").focus();
-		$("#insub").click(anon);
 		
-		$("#insub").css("cursor", "pointer");
 		$(document).keypress(function(int_keycode) {
 			
-			if (int_keycode.which == 13 && $("#intext").is(':focus')) anon();
+			if (int_keycode.which == 13 && $("#intext").is(':focus')) {
+				
+				model_getTextbookResults($("#intext").val());
+			}
 		});
+		$("#div_header").css({
+			
+			"border-bottom"	: "1px solid",
+			"display"		: "flex",
+			"flex-direction": "row",
+			"width"			: "100%"
+		});
+		$("#img_search").css({
+			
+			
+		});
+		$("#div_intextWrapper").css({
+			
+			"padding-left"	: "15px",
+			"width"			: "100%"
+		});
+		$("#intext").css({
+			
+			"border-style"	: "none",
+			"height"		: "100%",
+			"width"			: "100%"
+		});
+		
+		if (defined(str_query)) $("#intext").val(str_query);
+		$("#intext").focus();
 	}
 	function view_textbookResults() {
 		
-		clearBody();
+		view_textbookSearch(kvp_model.str_query);
 		document.title = "\"" + kvp_model.str_query + "\"";
-		
-		var anon = function() { model_getTextbookResults($("#intext").val()); };
-		
-		{ $("body").append(
-			
-			  '<input id="intext" type="text"></input>'
-			+ '<input id="insub" type="submit"></input'
-		); }
-		$("#intext").focus();
-		$("#intext").val(kvp_model.str_query);
-		$("#insub").click(anon);
-		$("#insub").css("cursor", "pointer");
-		
-		$(document).keypress(function(int_keycode) {
-			
-			if (int_keycode.which == 13 && $("#intext").is(':focus')) anon();
-		});
 		
 		$.each(kvp_model.textbooks, function(i, kvp_textbook) {
 			
-			var anon = function() { model_getTextbookContents(i); }
 			{ $("body").append(
 				
 				  '<div class="div_textbook">'
-				+     '<div class="div_column">'
-				+         '<img src="' + kvp_textbook.url_thumbnail + '">'
-				+     '</div>'
-				+     '<div class="div_column">'
-				+         '<p>' + kvp_textbook.str_name + '</p>'
-				+         '<p>' + kvp_textbook.str_edition + '</p>'
-				+         '<p>' + kvp_textbook.str_isbn + '</p>'
+				+     '<img src="' + kvp_textbook.url_thumbnail + '">'
+				+     '<div class="div_textbookDetailWrapper">'
+				+         '<p class="p_textbookTitle">'
+				+             kvp_textbook.str_name
+				+         '</p>'
+				+         '<p class="p_textbookSubtitle">'
+				+		      kvp_textbook.str_edition + ", ISBN "
+				+         	  kvp_textbook.str_isbn
+				+         '</p>'
 				+     '</div>'
 				+ '</div>'
 				
 			); }
-			$(".div_textbook").eq(i).click(anon);
-			$(".div_textbook").css("cursor", "pointer");
+			$(".div_textbook").eq(i).click(function() {
+				
+				model_getTextbookContents(i);
+			});
+			
+			$(".div_textbook").eq(i).css({
+				
+				"border-bottom"	: "1px solid " + kvp_colors.css_grayLine,
+				"cursor"		: "pointer",
+				"display"		: "flex"
+			});
+			$(".div_textbookDetailWrapper").eq(i).css({
+				
+				"display"			: "flex",
+				"flex-direction"	: "column",
+				"justify-content"	: "center",
+				"padding-left"		: "10px"
+			});
+			
+			view_formatTextLarge($(".p_textbookTitle").eq(i));
+			view_formatTextSmall($(".p_textbookSubtitle").eq(i));
 		});
 	}
 	function view_textbookContents() {
 		
-		clearBody();
+		view_textbookSearch();
 		document.title = kvp_model.textbooks[int_textbook].str_name;
-		var anon = function() { model_getTextbookResults($("#intext").val()); };
 		
 		{ $("body").append(
 			
-			  '<input id="intext" type="text"></input>'
-			+ '<input id="insub" type="submit"></input'
-		); }
-		$("#intext").focus();
-		$("#intext").val(kvp_model.str_query);
-		$("#insub").click(anon);
-		$("#insub").css("cursor", "pointer");
-		
-		$(document).keypress(function(int_keycode) {
+			  '<div id="div_textbookBar">'
+			+     '<img src="' + kvp_model.textbooks[int_textbook].url_thumbnail + '">'
+			+     '<div id="div_textbookBarDetailWrapper">'
+			+         '<p id="p_textbookBarTitle">'
+			+             kvp_model.textbooks[int_textbook].str_name
+			+         '</p>'
+			+         '<p id="p_textbookBarSubtitle">'
+			+		      kvp_model.textbooks[int_textbook].str_edition + ", ISBN "
+			+         	  kvp_model.textbooks[int_textbook].str_isbn
+			+         '</p>'
+			+     '</div>'
+			+ '</div>'
 			
-			if (int_keycode.which == 13 && $("#intext").is(':focus')) anon();
+		); }
+		$("#div_textbookBar").css({
+			
+			"background-color"	: kvp_colors.css_grayBg,
+			"display"			: "flex"
 		});
+		$("#div_textbookBarDetailWrapper").css({
+			
+			"display"			: "flex",
+			"flex-direction"	: "column",
+			"justify-content"	: "center",
+			"padding-left"		: "10px"
+		});
+		view_formatTextLarge($("#p_textbookBarTitle"));
+		view_formatTextSmall($("#p_textbookBarSubtitle"));
 		
 		$.each(kvp_model.textbooks[int_textbook].chapters, function(i, kvp_chapter) {
 			
 			{ $("body").append(
 				
 				  '<div class="div_chapter">'
-				+     '<div class="div_column">'
-				+         '<p>' + kvp_chapter.str_number + '</p>'
-				+     '</div>'
-				+     '<div class="div_column">'
-				+         '<p>' + kvp_chapter.str_name + '</p>'
-				+     '</div>'
+				+     '<p class="p_chapterName">' + kvp_chapter.str_name + '</p>'
 				+ '</div>'
 				
 			); }
+			$(".div_chapter").eq(i).css({
+				
+				"border-bottom"	: "1px solid " + kvp_colors.css_grayLine,
+				"padding-left"	: "55px"
+			});
+			view_formatTextSmall($(".p_chapterName").eq(i), true);
 			
 			$.each(kvp_chapter.sections, function(j, kvp_section) {
 				
-				var div_section = document.createElement("div");
-				div_section.style.cursor = "pointer";
+				var div_section = document.createElement("div"); {
+					
+					div_section.className = "div_section";
+				}
 				div_section.onclick = function() {
-						
-						model_getQuestionsInSection(i, j);
-					};
+					
+					model_getQuestionsInSection(i, j);
+				};
 				{ div_section.innerHTML += (
 					
-					  '<div class="div_column">'
-					+     '<p>' + kvp_section.str_number + '</p>'
-					+ '</div>'
-					+ '<div class="div_column">'
-					+     '<p>' + kvp_section.str_name + '</p>'
-					+ '</div>'
+					  '<p class="p_sectionNumber">'
+					+     kvp_section.str_number
+					+ '</p>'
+					+ '<p class="p_sectionName">'
+					+     kvp_section.str_name
+					+ '</p>'
 					
 				); }
-				document.body.appendChild(div_section);
+				
+				$(".div_chapter").eq(i).append(div_section);
+				$(".div_chapter").eq(i).find(".div_section").eq(j).css({
+					
+					"cursor"			: "pointer",
+					"display"			: "flex"
+				});
+				$(".div_chapter").eq(i).find(".p_sectionNumber").eq(j).css({
+					
+					"padding-right"	: "10px"
+				});
+				
+				view_formatTextLarge($(".div_chapter").eq(i).find(".p_sectionNumber").eq(j));
+				view_formatTextSmall($(".div_chapter").eq(i).find(".p_sectionName").eq(j));
+				
+				if (!defined($(".div_chapter").eq(i)
+					.find(".p_sectionNumber").eq(j).text())) {
+					
+					$(".div_chapter").eq(i).find(".p_sectionNumber").eq(j)
+						.text((i + 1).toString() + ".*");
+				}
 			});
 		});
 	}
 	function view_questionListHeader() {
 		
-		clearBody();
+		view_textbookSearch();
 		{ document.title = ("Section " + 
 			
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
@@ -647,9 +748,38 @@ function class_sladerCrawler() {
 			
 		); }
 		
-		$("body").append('<p id="p_back">Back</p>');
-		$("#p_back").css("cursor", "pointer");
-		$("#p_back").click(function() { view_textbookContents(); });
+		{ $("body").append(
+			
+			  '<div id="div_sectionBar">'
+			+     '<img src="' + kvp_model.textbooks[int_textbook].url_thumbnail + '">'
+			+     '<div id="div_sectionBarDetailWrapper">'
+			+         '<p id="p_sectionBarTitle">'
+			+             kvp_model.textbooks[int_textbook].chapters[int_chapter]
+						  .sections[int_section].str_number
+			+         '</p>'
+			+         '<p id="p_sectionBarSubtitle">'
+			+		      kvp_model.textbooks[int_textbook].chapters[int_chapter]
+						  .sections[int_section].str_name
+			+         '</p>'
+			+     '</div>'
+			+ '</div>'
+			
+		); }
+		$("#div_sectionBar").click(function() { view_textbookContents(); });
+		$("#div_sectionBar").css({
+			
+			"background-color"	: kvp_colors.css_grayBg,
+			"display"			: "flex"
+		});
+		$("#div_sectionBarDetailWrapper").css({
+			
+			"display"			: "flex",
+			"flex-direction"	: "column",
+			"justify-content"	: "center",
+			"padding-left"		: "10px"
+		});
+		view_formatTextLarge($("#p_sectionBarTitle"));
+		view_formatTextSmall($("#p_sectionBarSubtitle"));
 	}
 	function view_updateSectionQuestions() {
 		
@@ -665,24 +795,63 @@ function class_sladerCrawler() {
 			
 			div_question.className    = "div_question";
 			div_question.id			  = i;
-			div_question.style.cursor = "pointer";
 			div_question.onclick      = function() { model_getSolutions(this.id); }
 			{ div_question.innerHTML += (
 				
-				  '<div class="div_column">'
-				+     '<p>' + kvp_question.str_number + '</p>'
-				+ '</div>'
-				+ '<div class="div_column"></div>'
+				'<p class="p_number">' + kvp_question.str_number + '</p>'
 				
 			); }
 			
+			if (defined(kvp_question.int_page)) {
+				
+				{ $("body").append(
+				
+					  '<div id=div_page' + kvp_question.int_page + '>'
+					+     '<p class="p_page">Page ' + kvp_question.int_page + '</p>'
+					+ '</div>'
+					
+				); }
+				{ view_formatTextSmall(
+				
+					$("#div_page" + kvp_question.int_page)
+					.find("p").eq(0)
+					
+				, true); }
+				
+				$("#div_page" + kvp_question.int_page).find("p").eq(0).css({
+					
+					"padding-left"	: "55px"
+				});
+				
+				if ($("body").find(".p_page").length != 1) {
+					
+					$("#div_page" + kvp_question.int_page).css({
+						
+						"border-top"	: "1px solid " + kvp_colors.css_grayLine
+					});
+				}
+			}
 			document.body.appendChild(div_question);
-			{ div_question.getElementsByClassName("div_column")[1].innerHTML += (
+			{ div_question.innerHTML += (
 				
 				(defined(kvp_question.str_answer))
 				? '<p>' + kvp_question.str_answer + '</p>'
 				: '<img src=' + kvp_question.url_imgAnswer + '>'
 			); }
+			
+			view_formatTextLarge($("#" + i).find(".p_number").eq(0));
+			
+			$("#" + i).css({
+				
+				"cursor"			: "pointer",
+				"display"			: "flex",
+				"flex-direction"	: "row",
+				"padding-left"		: "55px"
+			});
+			$("#" + i).find("p").eq(0).css({
+				
+				"padding-right"	: "15px"
+			});
 		}
 	}
 	function view_solutions() {
@@ -767,14 +936,16 @@ function class_sladerCrawler() {
 	
 	{ $("head").html("<style>\
 		\
-		* { margin: 0px; }\
-		.div_column {\
+		* {\
 			\
-			display: inline-block;\
-			margin-right: 10px;\
+			margin:			0px;\
+			padding:		0px;\
 		}\
 		\
 	</style>"); }
+	document.title = "Slader Crawler";
+	clearBody();
+	
 	view_textbookSearch();
 }
 function main() {
