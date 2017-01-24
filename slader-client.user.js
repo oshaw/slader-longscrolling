@@ -102,15 +102,6 @@ function clearBody()	     {
 function class_sladerCrawler() {
 	
 	var kvp_model			= {}
-	var kvp_colors = {
-		
-		css_black		: "rgb(38, 38, 38)",
-		css_graySearch	: "rgb(127, 127, 127)",
-		css_grayText	: "rgb(191, 191, 191)",
-		css_grayLine	: "rgb(217, 217, 217)",
-		css_grayBg		: "rgb(242, 242, 242)",
-		css_white		: "rgb(255, 255, 255)"
-	}
 	var url_base			= "http://slader.com";
 	var int_textbook		= -1;
 	var int_chapter			= -1;
@@ -179,7 +170,7 @@ function class_sladerCrawler() {
 						chapters:      []
 					});
 				});
-				view_textbookResults();
+				view_pageTextbookResults();
 			}
 		});
 	}
@@ -268,7 +259,7 @@ function class_sladerCrawler() {
 					});
 				});
 			});
-			view_textbookContents();
+			view_pageTextbookContents();
 		});
 	}
 	function model_getQuestionsInSection(int_chapterIndex, int_sectionIndex) {
@@ -303,7 +294,7 @@ function class_sladerCrawler() {
 				}
 			);
 		}
-		view_questionListHeader();
+		view_addQuestionPageHeader();
 		anon_loopThroughPages();
 	}
 	function model_getQuestionsOnPage(url, str_header, int_page, anon_callback) {
@@ -368,7 +359,7 @@ function class_sladerCrawler() {
 				}
 			});
 			
-			view_updateSectionQuestions();
+			view_addUnaddedQuestions();
 			anon_callback(parseInt($("<div/>").html(html).find(".next").eq(0).text()));
 		});
 	}
@@ -528,11 +519,23 @@ function class_sladerCrawler() {
 							}
 						});
 					});
-					view_solutions();
+					view_pageSolutions();
 				}
 			});
 		});
 	}
+	
+	var kvp_colors = {
+		
+		css_black		: "rgb(38, 38, 38)",
+		css_graySearch	: "rgb(127, 127, 127)",
+		css_grayText	: "rgb(191, 191, 191)",
+		css_grayLine	: "rgb(217, 217, 217)",
+		css_grayBg		: "rgb(242, 242, 242)",
+		css_white		: "rgb(255, 255, 255)"
+	}
+	var bool_displayQuestions	= false;
+	var bool_viewingSolution	= false;
 	
 	function view_formatTextLarge(jp, bool_bold = true) {
 		
@@ -565,7 +568,7 @@ function class_sladerCrawler() {
 			$(this).css("backgroundColor", kvp_colors.css_white);
 		});
 	}
-	function view_backHeader(str_title, str_subtitle, anon_onClick) {
+	function view_addBackHeader(str_title, str_subtitle, anon_onClick) {
 		
 		{ $("body").append(
 			
@@ -582,6 +585,7 @@ function class_sladerCrawler() {
 		$("#div_header").css({
 			
 			"background-color"	: kvp_colors.css_grayBg,
+			"cursor"			: "pointer",
 			"display"			: "flex"
 		});
 		$("#div_headerDetailWrapper").css({
@@ -594,7 +598,7 @@ function class_sladerCrawler() {
 		view_formatTextLarge($("#p_headerTitle"));
 		view_formatTextSmall($("#p_headerSubtitle"));
 	}
-	function view_textbookSearch(str_query = "") {
+	function view_addTextbookSearch(str_query = "") {
 		
 		clearBody();
 		{ $("body").append(
@@ -637,10 +641,10 @@ function class_sladerCrawler() {
 		if (def(str_query)) $("#intext").val(str_query);
 		$("#intext").focus();
 	}
-	function view_textbookResults() {
+	function view_pageTextbookResults() {
 		
 		clearBody();
-		view_textbookSearch(kvp_model.str_query);
+		view_addTextbookSearch(kvp_model.str_query);
 		document.title = "\"" + kvp_model.str_query + "\"";
 		
 		$.each(kvp_model.textbooks, function(i, kvp_textbook) {
@@ -685,9 +689,9 @@ function class_sladerCrawler() {
 			view_formatTextSmall($(".p_textbookSubtitle").eq(i));
 		});
 	}
-	function view_textbookContents() {
+	function view_pageTextbookContents() {
 		
-		view_textbookSearch();
+		view_addTextbookSearch();
 		document.title = kvp_model.textbooks[int_textbook].str_name;
 		
 		{ $("body").append(
@@ -794,10 +798,10 @@ function class_sladerCrawler() {
 			});
 		});
 	}
-	function view_questionListHeader() {
+	function view_addQuestionPageHeader() {
 		
-		view_textbookSearch();
-		{ view_backHeader(
+		view_addTextbookSearch();
+		{ view_addBackHeader(
 		
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].str_number, 
@@ -805,16 +809,21 @@ function class_sladerCrawler() {
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].str_name,
 		  
-			function() { view_textbookContents(); }
+			function() {
+				
+				bool_displayQuestions = false;
+				view_pageTextbookContents();
+			}
 		); }
 		{ document.title = ("Section " + 
 			
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].str_number
-			
 		); }
+		
+		bool_displayQuestions = true;
 	}
-	function view_updateSectionQuestions() {
+	function view_addUnaddedQuestions() {
 		
 		{ var kvps_questions = (
 		
@@ -823,12 +832,21 @@ function class_sladerCrawler() {
 		); }
 		for (var i = $(".div_question").length; i < kvps_questions.length; i++) {
 			
+			if (!bool_displayQuestions) return;
+			
 			var kvp_question = kvps_questions[i];
 			var div_question = document.createElement("div");
 			
 			div_question.className    = "div_question";
 			div_question.id			  = i;
-			div_question.onclick      = function() { model_getSolutions(this.id); }
+			div_question.onclick      = function() {
+				
+				if (bool_viewingSolution) return;
+				bool_viewingSolution	= true;
+				bool_displayQuestions	= false;
+				
+				model_getSolutions(this.id);
+			}
 			{ div_question.innerHTML += (
 				
 				'<p class="p_number">' + kvp_question.str_number + '</p>'
@@ -893,10 +911,10 @@ function class_sladerCrawler() {
 			});
 		}
 	}
-	function view_solutions() {
+	function view_pageSolutions() {
 		
-		view_textbookSearch();
-		{ view_backHeader(
+		view_addTextbookSearch();
+		{ view_addBackHeader(
 		
 			kvp_model.textbooks[int_textbook].chapters[int_chapter]
 			.sections[int_section].questions[int_question].str_number, 
@@ -906,8 +924,9 @@ function class_sladerCrawler() {
 		  
 			function() {
 				
-				view_questionListHeader();
-				view_updateSectionQuestions();
+				bool_viewingSolution = false;
+				view_addQuestionPageHeader();
+				view_addUnaddedQuestions();
 			}
 		); }
 		{ document.title = (
@@ -1073,7 +1092,7 @@ function class_sladerCrawler() {
 	document.title = "Slader Client";
 	clearBody();
 	
-	view_textbookSearch();
+	view_addTextbookSearch();
 }
 function main() {
 	
