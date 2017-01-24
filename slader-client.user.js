@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.3.3
+// @version    		    0.3.4
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -928,7 +928,16 @@ function class_sladerClient() {
 				bool_viewingSolution	= true;
 				bool_displayQuestions	= false;
 				
-				model_getSolutions(this.id);
+				if (kvp_model.textbooks[int_textbook]
+					.chapters[int_chapter]
+					.sections[int_section]
+					.questions[parseInt(this.id)]
+					.solutions.length > 0) {
+					
+					int_question = parseInt(this.id);
+					view_pageSolutions();
+					
+				} else model_getSolutions(this.id);
 			}
 			{ div_question.innerHTML += (
 				
