@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.3.1
+// @version    		    0.3.2
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -101,13 +101,13 @@ function clearBody()	     {
 
 function class_sladerCrawler() {
 	
-	var kvp_model			= {}
-	var url_base			= "http://slader.com";
-	var int_textbook		= -1;
-	var int_chapter			= -1;
-	var int_section			= -1;
-	var int_question		= -1;
-	var bool_getLargeImages	= false;
+	var kvp_model				= {}
+	var url_base				= "http://slader.com";
+	var int_textbook			= -1;
+	var int_chapter				= -1;
+	var int_section				= -1;
+	var int_question			= -1;
+	var bool_getLargeImages		= false;
 	
 	function func_dirToHeader(url) {
 		
@@ -219,7 +219,7 @@ function class_sladerCrawler() {
 								kvp_model.textbooks[int_textbook]
 									.chapters[i].sections[j]
 									.str_number = trimSpaces(td.textContent);
-									
+								
 								break;
 							}
 							case 1: {
@@ -525,7 +525,7 @@ function class_sladerCrawler() {
 		});
 	}
 	
-	var kvp_colors = {
+	var kvp_colors				= {
 		
 		css_black		: "rgb(38, 38, 38)",
 		css_graySearch	: "rgb(127, 127, 127)",
@@ -756,7 +756,16 @@ function class_sladerCrawler() {
 				}
 				div_section.onclick = function() {
 					
-					model_getQuestionsInSection(i, j);
+					if (kvp_model.textbooks[int_textbook].chapters[i]
+							.sections[j].questions.length == 0) {
+								
+						model_getQuestionsInSection(i, j);
+						
+					} else {
+						
+						view_addQuestionPageHeader();
+						view_addUnaddedQuestions();
+					}
 				};
 				{ div_section.innerHTML += (
 					
@@ -831,7 +840,7 @@ function class_sladerCrawler() {
 			.sections[int_section].questions
 		); }
 		for (var i = $(".div_question").length; i < kvps_questions.length; i++) {
-			
+			console.log(i);
 			if (!bool_displayQuestions) return;
 			
 			var kvp_question = kvps_questions[i];
@@ -876,7 +885,7 @@ function class_sladerCrawler() {
 					"padding-left"		: "55px"
 				});
 				
-				if ($("body").find(".p_page").length != 1) {
+				if ($("body").find(".div_question").length > 1) {
 					
 					$("#div_page" + kvp_question.int_page).css({
 						
