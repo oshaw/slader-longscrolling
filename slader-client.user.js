@@ -920,9 +920,9 @@ function class_sladerClient() {
 			var kvp_question = kvps_questions[i];
 			var div_question = document.createElement("div");
 			
-			div_question.className    = "div_question";
-			div_question.id			  = i;
-			div_question.onclick      = function() {
+			div_question.className	= "div_question";
+			div_question.id			= i;
+			div_question.onclick	= function() {
 				
 				if (bool_viewingSolution) return;
 				bool_viewingSolution	= true;
