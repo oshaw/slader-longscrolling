@@ -101,7 +101,8 @@ function clearBody()	     {
 
 function class_sladerClient() {
 	
-	var kvp_model				= {}
+	var kvp_textbook			= { chapters: [] }
+	var kvp_query				= {}
 	var url_base				= "http://slader.com";
 	var int_textbook			= -1;
 	var int_chapter				= -1;
@@ -133,7 +134,7 @@ function class_sladerClient() {
 		
 		if (!def(str_query)) return;
 		
-		kvp_model = {
+		kvp_query = {
 			
 			str_query: str_query,
 			textbooks: []
@@ -152,14 +153,14 @@ function class_sladerClient() {
 			data: (
 			
 				'{"requests":[{"indexName":"textbook_index",\
-				"params":"query=' + str_query + '&hitsPerPage=5&page=0"}]}'
+				"params":"query=' + kvp_query.str_query + '&hitsPerPage=5&page=0"}]}'
 			),
 			onload: function(kvp) {
 				
 				var kvps_results = JSON.parse(kvp.responseText).results[0].hits;
 				$.each(kvps_results, function(i, kvp_result) {
 					
-					kvp_model.textbooks.push({
+					kvp_query.textbooks.push({
 						
 						str_name:      kvp_result.title,
 						str_edition:   kvp_result.edition,
@@ -176,8 +177,7 @@ function class_sladerClient() {
 	}
 	function model_getTextbookContents(int_textbookIndex) {
 		
-		int_textbook = int_textbookIndex;
-		gmGet(kvp_model.textbooks[int_textbook].url_path, function(html) {
+		gmGet(kvp_query.textbooks[int_textbookIndex].url_path, function(html) {
 			
 			var jsects_chapters = (
 			
@@ -185,11 +185,13 @@ function class_sladerClient() {
 				.html(html)
 				.find(".toc-item")
 			);
+			kvp_textbook = kvp_query.textbooks[int_textbookIndex];
+			kvp_textbook.chapters = [];
 			
 			$.each(jsects_chapters, function(i, sect_chapter) {
 				
 				var jsect_chapter = $("<div/>").html(sect_chapter.innerHTML);
-				kvp_model.textbooks[int_textbook].chapters.push({
+				kvp_textbook.chapters.push({
 					
 					str_number: i + 1,
 					str_name: trimSpaces(
@@ -203,10 +205,10 @@ function class_sladerClient() {
 				
 				$.each(jsect_chapter.find(".exercise-group"), function(j, tr) {
 					
-					kvp_model.textbooks[int_textbook].chapters[i].sections
+					kvp_textbook.chapters[i].sections
 						.push({ questions: [] });
 					
-					kvp_model.textbooks[int_textbook].chapters[i].sections[j]
+					kvp_textbook.chapters[i].sections[j]
 						.url_pageStart = url_base + tr.getAttribute("data-url");
 					
 					var jtr = $("<div/>").html(tr.innerHTML);
@@ -216,7 +218,7 @@ function class_sladerClient() {
 							
 							case 0: {
 								
-								kvp_model.textbooks[int_textbook]
+								kvp_textbook
 									.chapters[i].sections[j]
 									.str_number = trimSpaces(td.textContent);
 								
@@ -226,7 +228,7 @@ function class_sladerClient() {
 								
 								if (def(trimSpaces(td.textContent))) {
 									
-									kvp_model.textbooks[int_textbook]
+									kvp_textbook
 										.chapters[i].sections[j]
 										.str_name = trimSpaces(td.textContent);
 								}
@@ -234,11 +236,11 @@ function class_sladerClient() {
 							}
 							case 2: {
 								
-								if (!def(kvp_model.textbooks[int_textbook]
+								if (!def(kvp_textbook
 									.chapters[i].sections[j]
 									.str_name)) {
 									
-									kvp_model.textbooks[int_textbook]
+									kvp_textbook
 										.chapters[i].sections[j]
 										.str_name = trimSpaces(td.textContent);
 								}
@@ -246,7 +248,7 @@ function class_sladerClient() {
 							}
 							case 3: {
 								
-								kvp_model.textbooks[int_textbook]
+								kvp_textbook
 									.chapters[i].sections[j]
 									.int_pageStart = parseInt(
 									
@@ -269,14 +271,14 @@ function class_sladerClient() {
 		
 		{ var int_page = (
 			
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].int_pageStart
 			
 		); }
-		{ var url = kvp_model.textbooks[int_textbook].url_path + int_page; }
+		{ var url = kvp_textbook.url_path + int_page; }
 		{ var str_header = func_dirToHeader(
 			
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].url_pageStart
 		); }
 		
@@ -284,7 +286,7 @@ function class_sladerClient() {
 			
 			model_getQuestionsOnPage(
 			
-				url_base + kvp_model.textbooks[int_textbook].url_path + int_page,
+				url_base + kvp_textbook.url_path + int_page,
 				str_header,
 				int_page,
 				function(int_next) {
@@ -354,7 +356,7 @@ function class_sladerClient() {
 						kvp_question.str_answer = trimSpaces(jp_answer.text());
 					}
 					
-					kvp_model.textbooks[int_textbook].chapters[int_chapter]
+					kvp_textbook.chapters[int_chapter]
 						.sections[int_section].questions.push(kvp_question);
 				}
 			});
@@ -369,7 +371,7 @@ function class_sladerClient() {
 		
 		var url_solution = (
 		
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].questions[int_question].url_solutions
 		);
 		
@@ -394,7 +396,7 @@ function class_sladerClient() {
 					
 					$.each(jartcs_solutions, function(i, artc_solution) {
 						
-						kvp_model.textbooks[int_textbook].chapters[int_chapter]
+						kvp_textbook.chapters[int_chapter]
 							.sections[int_section].questions[int_question]
 							.solutions.push({ steps: [] });
 							
@@ -406,7 +408,7 @@ function class_sladerClient() {
 						
 						$.each(jdivs_steps, function(j, div_step) {
 							
-							kvp_model.textbooks[int_textbook]
+							kvp_textbook
 								.chapters[int_chapter].sections[int_section]
 								.questions[int_question].solutions[i]
 								.steps.push({
@@ -433,7 +435,7 @@ function class_sladerClient() {
 								
 								var kvp_step = (
 								
-									kvp_model.textbooks[int_textbook]
+									kvp_textbook
 									.chapters[int_chapter]
 									.sections[int_section]
 									.questions[int_question]
@@ -493,7 +495,7 @@ function class_sladerClient() {
 						);
 						var kvp_solution = (
 						
-							kvp_model.textbooks[int_textbook]
+							kvp_textbook
 							.chapters[int_chapter].sections[int_section]
 							.questions[int_question].solutions[i]
 						);
@@ -704,17 +706,17 @@ function class_sladerClient() {
 		
 		clearBody();
 		bool_searchingTextbook = false;
-		view_addTextbookSearch(kvp_model.str_query);
-		document.title = "\"" + kvp_model.str_query + "\"";
+		view_addTextbookSearch(kvp_query.str_query);
+		document.title = "\"" + kvp_query.str_query + "\"";
 		
 		var str_noResultsSubtitle	= (
 			
 			"No results for \""
-			+ kvp_model.str_query
+			+ kvp_textbook.str_query
 			+ "\""
 		);
 		
-		if (kvp_model.textbooks.length == 0) {
+		if (kvp_query.textbooks.length == 0) {
 			
 			{ $("body").append(
 				
@@ -745,7 +747,7 @@ function class_sladerClient() {
 			view_formatTextLarge($("#p_noResultsTitle"));
 			view_formatTextSmall($("#p_noResultsSubtitle"));
 		}
-		$.each(kvp_model.textbooks, function(i, kvp_textbook) {
+		$.each(kvp_query.textbooks, function(i, kvp_textbook) {
 			
 			{ $("body").append(
 				
@@ -796,7 +798,7 @@ function class_sladerClient() {
 	function view_pageTextbookContents() {
 		
 		view_addTextbookSearch();
-		document.title = kvp_model.textbooks[int_textbook].str_name;
+		document.title = kvp_textbook.str_name;
 		
 		{ $("body").append(
 			
@@ -804,11 +806,11 @@ function class_sladerClient() {
 			+     '<div id="div_imgSelectedBookThumb"></div>'
 			+     '<div id="div_selectedBookDetailWrapper">'
 			+         '<p id="p_selectedBookTitle">'
-			+             kvp_model.textbooks[int_textbook].str_name
+			+             kvp_textbook.str_name
 			+         '</p>'
 			+         '<p id="p_selectedBookSubtitle">'
-			+		      kvp_model.textbooks[int_textbook].str_edition + ", ISBN "
-			+         	  kvp_model.textbooks[int_textbook].str_isbn
+			+		      kvp_textbook.str_edition + ", ISBN "
+			+         	  kvp_textbook.str_isbn
 			+         '</p>'
 			+     '</div>'
 			+ '</div>'
@@ -823,7 +825,7 @@ function class_sladerClient() {
 			
 			"background-image"	: (
 			
-				'url("' + kvp_model.textbooks[int_textbook].url_thumbnail + '")'
+				'url("' + kvp_textbook.url_thumbnail + '")'
 			),
 			"height"			: int_iconFrameSize.toString() + "px",
 			"width"				: int_iconFrameSize.toString() + "px"
@@ -839,7 +841,7 @@ function class_sladerClient() {
 		view_formatTextLarge($("#p_selectedBookTitle"));
 		view_formatTextSmall($("#p_selectedBookSubtitle"));
 		
-		$.each(kvp_model.textbooks[int_textbook].chapters, function(i, kvp_chapter) {
+		$.each(kvp_textbook.chapters, function(i, kvp_chapter) {
 			
 			{ $("body").append(
 				
@@ -871,7 +873,7 @@ function class_sladerClient() {
 				}
 				div_section.onclick = function() {
 					
-					if (kvp_model.textbooks[int_textbook].chapters[i]
+					if (kvp_textbook.chapters[i]
 							.sections[j].questions.length == 0) {
 								
 						model_getQuestionsInSection(i, j);
@@ -928,10 +930,10 @@ function class_sladerClient() {
 		view_addTextbookSearch();
 		{ view_addBackHeader(
 		
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].str_number, 
 		  
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].str_name,
 		  
 			function() {
@@ -942,7 +944,7 @@ function class_sladerClient() {
 		); }
 		{ document.title = ("Section " + 
 			
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].str_number
 		); }
 		
@@ -952,7 +954,7 @@ function class_sladerClient() {
 		
 		{ var kvps_questions = (
 		
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].questions
 		); }
 		for (var i = $(".div_question").length; i < kvps_questions.length; i++) {
@@ -970,7 +972,7 @@ function class_sladerClient() {
 				bool_viewingSolution	= true;
 				bool_displayQuestions	= false;
 				
-				if (kvp_model.textbooks[int_textbook]
+				if (kvp_textbook
 					.chapters[int_chapter]
 					.sections[int_section]
 					.questions[parseInt(this.id)]
@@ -1050,10 +1052,10 @@ function class_sladerClient() {
 		view_addTextbookSearch();
 		{ view_addBackHeader(
 		
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].questions[int_question].str_number, 
 		  
-			'Section ' + kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			'Section ' + kvp_textbook.chapters[int_chapter]
 			.sections[int_section].str_number,
 		  
 			function() {
@@ -1066,16 +1068,16 @@ function class_sladerClient() {
 		{ document.title = (
 		
 			"Section " 
-			+ kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			+ kvp_textbook.chapters[int_chapter]
 			.sections[int_section].str_number
 			+ " Question "
-			+ kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			+ kvp_textbook.chapters[int_chapter]
 			.sections[int_section].questions[int_question].str_number
 		); }
 		
 		{ var kvps_solutions = (
 			
-			kvp_model.textbooks[int_textbook].chapters[int_chapter]
+			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].questions[int_question].solutions
 		); }
 		$.each(kvps_solutions, function(i, kvp_solution) {
