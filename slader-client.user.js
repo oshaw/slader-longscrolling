@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.3.4
+// @version    		    0.3.5
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -730,7 +730,8 @@ function class_sladerClient() {
 		
 		$("body").css({
 			
-			"overflow"	: "scroll"
+			"overflow"		: "scroll",
+			"overflow-x"	: "hidden"
 		});
 		$("#img_search").attr("src", kvp_images.uri_search);
 		$("#div_imgSearchWrapper").click(function() { $("#intext").focus(); });
@@ -765,12 +766,12 @@ function class_sladerClient() {
 		});
 		$("#div_searchResultsWrapper").css({
 			
-			"height"			: "100%",
-			"overflow"			: "scroll",
-			"position"			: "absolute",
-			"top"				: int_iconFrameSize.toString() + "px",
-			"width"				: "100%",
-			"z-index"			: 1
+			"height"		: "100%",
+			"overflow-y"	: "scroll",
+			"position"		: "absolute",
+			"top"			: int_iconFrameSize.toString() + "px",
+			"width"			: "100%",
+			"z-index"		: 1
 		});
 		$("#div_search").css({
 			
@@ -786,6 +787,20 @@ function class_sladerClient() {
 		
 		$.each(kvp_query.textbooks, function(i, kvp_textbook) {
 			
+			var str_subtitle = "";
+			if (def(kvp_textbook.str_edition)) {
+				
+				str_subtitle += kvp_textbook.str_edition;
+			}
+			if (def(kvp_textbook.str_edition) && def(kvp_textbook.str_isbn)) {
+				
+				str_subtitle += ", ";
+			}
+			if (def(kvp_textbook.str_isbn)) {
+				
+				str_subtitle += "ISBN " + kvp_textbook.str_isbn;
+			}
+			
 			{ $("#div_searchResultsWrapper").append(
 				
 				  '<div class="div_textbook">'
@@ -795,8 +810,7 @@ function class_sladerClient() {
 				+             kvp_textbook.str_name
 				+         '</p>'
 				+         '<p class="p_textbookSubtitle">'
-				+		      kvp_textbook.str_edition + ", ISBN "
-				+         	  kvp_textbook.str_isbn
+				+		      str_subtitle
 				+         '</p>'
 				+     '</div>'
 				+ '</div>'
@@ -876,6 +890,20 @@ function class_sladerClient() {
 		view_addTextbookSearch();
 		document.title = kvp_textbook.str_name;
 		
+		var str_subtitle = "";
+		if (def(kvp_textbook.str_edition)) {
+			
+			str_subtitle += kvp_textbook.str_edition;
+		}
+		if (def(kvp_textbook.str_edition) && def(kvp_textbook.str_isbn)) {
+			
+			str_subtitle += ", ";
+		}
+		if (def(kvp_textbook.str_isbn)) {
+			
+			str_subtitle += "ISBN " + kvp_textbook.str_isbn;
+		}
+		
 		{ $("body").append(
 			
 			  '<div id="div_selectedBookBar">'
@@ -885,8 +913,7 @@ function class_sladerClient() {
 			+             kvp_textbook.str_name
 			+         '</p>'
 			+         '<p id="p_selectedBookSubtitle">'
-			+		      kvp_textbook.str_edition + ", ISBN "
-			+         	  kvp_textbook.str_isbn
+			+		      str_subtitle
 			+         '</p>'
 			+     '</div>'
 			+ '</div>'
@@ -1004,10 +1031,22 @@ function class_sladerClient() {
 	function view_addQuestionPageHeader() {
 		
 		view_addTextbookSearch();
+		
+		var str_number = "";
+		if (def(kvp_textbook.chapters[int_chapter].sections[int_section]
+			.str_number)) {
+			
+			str_number = (
+				
+				kvp_textbook.chapters[int_chapter].sections[int_section]
+				.str_number
+			);
+			
+		} else str_number = (int_chapter + 1).toString() + ".*";
+		
 		{ view_addBackHeader(
 		
-			kvp_textbook.chapters[int_chapter]
-			.sections[int_section].str_number, 
+			str_number, 
 		  
 			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].str_name,
@@ -1126,13 +1165,25 @@ function class_sladerClient() {
 	function view_pageSolutions() {
 		
 		view_addTextbookSearch();
+		
+		var str_number = "";
+		if (def(kvp_textbook.chapters[int_chapter].sections[int_section]
+			.str_number)) {
+			
+			str_number = (
+				
+				kvp_textbook.chapters[int_chapter].sections[int_section]
+				.str_number
+			);
+			
+		} else str_number = (int_chapter + 1).toString() + ".*";
+		
 		{ view_addBackHeader(
 		
 			kvp_textbook.chapters[int_chapter]
 			.sections[int_section].questions[int_question].str_number, 
 		  
-			'Section ' + kvp_textbook.chapters[int_chapter]
-			.sections[int_section].str_number,
+			'Section ' + str_number,
 		  
 			function() {
 				
@@ -1304,6 +1355,10 @@ function class_sladerClient() {
 			}\
 			\
 		</style>"); }
+		$("body").css({
+			
+			"overflow-x"	: "hidden"
+		});
 		document.title = "Slader Client";
 		clearBody();
 		
