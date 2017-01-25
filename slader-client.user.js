@@ -733,6 +733,7 @@ function class_sladerClient() {
 	}
 	function view_clearTextbookResults() {
 		
+		$("#div_searchResultsWrapper").remove();
 		$("#div_searchMask").remove();
 		$("#div_noResults").remove();
 		$.each($(".div_textbook"), function(i, div_textbook) {
@@ -766,6 +767,15 @@ function class_sladerClient() {
 			  '<div id="div_searchResultsWrapper"></div>'
 			+ '<div id="div_searchMask"></div>'
 		); }
+		$("#div_searchResultsWrapper").css({
+			
+			"height"		: "100%",
+			"overflow-y"	: "scroll",
+			"position"		: "absolute",
+			"top"			: int_iconFrameSize.toString() + "px",
+			"width"			: "100%",
+			"z-index"		: 1
+		});
 		$("#div_searchMask").css({
 			
 			"background-color"	: kvp_colors.css_black,
@@ -775,15 +785,6 @@ function class_sladerClient() {
 			"top"				: int_iconFrameSize.toString() + "px",
 			"width"				: "100%",
 			"z-index"			: 0
-		});
-		$("#div_searchResultsWrapper").css({
-			
-			"height"		: "100%",
-			"overflow-y"	: "scroll",
-			"position"		: "absolute",
-			"top"			: int_iconFrameSize.toString() + "px",
-			"width"			: "100%",
-			"z-index"		: 1
 		});
 		$("#div_search").css({
 			
@@ -861,7 +862,7 @@ function class_sladerClient() {
 		});
 		if (kvp_query.textbooks.length == 0) {
 			
-			{ $("body").append(
+			{ $("#div_searchResultsWrapper").append(
 				
 				  '<div id="div_noResults">'
 				+     '<div id="div_noResultsDetailWrapper">'
@@ -877,10 +878,7 @@ function class_sladerClient() {
 				"background-color"	: kvp_colors.css_whiteBg,
 				"border-bottom"		: "1px solid " + kvp_colors.css_grayLine,
 				"display"			: "flex",
-				"position"			: "absolute",
-				"top"				: int_resultTop.toString() + "px",
-				"width"				: "100%",
-				"z-index"			: (kvp_query.textbooks.length + 1).toString()
+				"width"				: "100%"
 			});
 			$("#div_noResultsDetailWrapper").css({
 				
