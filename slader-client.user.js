@@ -664,8 +664,12 @@ function class_sladerClient() {
 				&& $("#intext").is(':focus')
 				&& !bool_searchingTextbook) {
 				
-				bool_searchingTextbook = true;
-				model_getTextbookResults($("#intext").val());
+				if (kvp_query.str_query != $("#intext").val()) {
+					
+					bool_searchingTextbook = true;
+					model_getTextbookResults($("#intext").val());
+					
+				} else view_addTextbookResults();
 			}
 		});
 		$("#div_imgSearchWrapper").click(function() { $("#intext").focus(); });
