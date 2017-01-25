@@ -133,12 +133,13 @@ function class_sladerClient() {
 	function model_getTextbookResults(str_query) {
 		
 		if (!def(str_query)) return;
-		
+		console.log(str_query);
 		kvp_query = {
 			
 			str_query: str_query,
 			textbooks: []
 		}
+		
 		GM_xmlhttpRequest({
 			
 			method: "POST",
@@ -171,7 +172,7 @@ function class_sladerClient() {
 						chapters:      []
 					});
 				});
-				view_pageTextbookResults();
+				view_addTextbookResults();
 			}
 		});
 	}
@@ -527,27 +528,30 @@ function class_sladerClient() {
 		});
 	}
 	
-	var kvp_colors				= {
+	var kvp_colors						= {
 		
 		css_black		: "rgb(38, 38, 38)",
 		css_graySearch	: "rgb(127, 127, 127)",
 		css_grayText	: "rgb(191, 191, 191)",
+		css_grayMask	: "rgb(191, 191, 191)",
 		css_grayLine	: "rgb(217, 217, 217)",
 		css_grayBg		: "rgb(242, 242, 242)",
-		css_white		: "rgb(255, 255, 255)"
+		css_whiteBg		: "rgb(255, 255, 255)"
 	}
-	var kvp_images				= {
+	var kvp_images						= {
 		
 		  uri_search	: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADEAAAAzCAMAAAF+jSCzAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACTUExURQAAAD8/Px8fHyoqKh8fHyYmJioqKiUlJScnJyMjIygoKCUlJSQkJCYmJicnJyUlJSYmJiUlJSYmJiUlJSYmJiUlJSUlJSUlJSUlJSYmJiUlJSYmJiUlJSUlJSYmJiYmJiUlJSUlJSYmJiUlJSUlJSUlJSUlJSYmJiUlJSUlJSUlJSYmJiUlJSYmJiUlJSYmJiYmJh9o+NMAAAAwdFJOUwAECAwQFBgbICQsMDg8VFhcYGRscHR8gJufo6err7O7v8PHy8zT19vf4efv8/f7+zSf2k8AAAAJcEhZcwAAFxEAABcRAcom8z8AAAJISURBVDhPxZXpdhoxDIXNWhIKaYCkFAIFWgKlw9Tv/3TVla6XWchJ86ffgfGVZJmxLRvn3GYgD+e8AEseaAdsgx/so8DjgAej8n2QLz5qeq9dRLEF6BvHMuH9Ec3BrBGj0utBdOjqjqL3cUhDbG2/nJfaCvcY3l/MUM3hpZXn3DLib7QYm2Q8en/tfbNM5646GA3XE/UcLaVuUVQ4YQTwSIdhrx240itY/3vIrcqeumXO0Q/03ajPmbb3DNayEsHEogXt56ZL6GfTwkVjkZ90K9iVjMruRGSbPhqjepPB8nDeVpcTyOYZlw49Rj6dz/SBgj5jQq9zP+gJhNG6an2HvFPJorMpfaWhkUyX1JbDBYecmRRg7ZLsmxRgFUmOTQqwTkm+mBRgrZOMy7mCcWd6Ac3XsjUzzRS/GvWmVvoL+jnfRKhJ56b0BFLkdo7DMRJeP1mbRQJaxB+LVDdf0UicTI5EWv0SueFv0J3v9fyQ/aLLQDvDenkpR+5Nk0m1TDOKKbtUGNZOb5VL83fisRHK7Wzc749nm3xGrNmIXKmkDEWvPKWkdJeAQQzo4cl5YcD7ET2K3ltgS0eGljJY0aHIn4mRDkkE/yoKj4yhtyZI5y3CUoqnz7D7WGjePekc8CAbcW3LxroPw79LrQDtfgRP9JC0T6/0kG624+u4jMO4Tt7/rk+xU7vG6/xqqeHbhajsW06km7xZjO05nXkj6Q9b0JojjOar3akoTrv1AmvdS+t4O6fG/8h57y0Tct7bHyDnX/oD3p7O/QU6/7WrNM7DhwAAAABJRU5ErkJggg=="
 		, uri_back		: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAAtCAMAAAGheIgcAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAtUExURQAAACoqKioqKiUlJSYmJiUlJSQkJCYmJiUlJSUlJSUlJSYmJiUlJSUlJSYmJv/1pYIAAAAOdFJOUwAMGGx4j5+fw9fY3d/lzwLVSgAAAAlwSFlzAAAXEQAAFxEByibzPwAAAQNJREFUOE/dlOuywiAMhEE9inrk/R/XEBYIlwjtjI7j90OyLktpuZiC97KhluDCsTbmD20Evfn3gc4O2ZQoowUwHsOBSJDO56cwpI8oeyrHeTEtil1RNuLeiMSFJEoiqGqaxESiVanmJ6HpEScoQTTKbDOqId6nwO8SF6aFrbEJKz2sWpTC1FTeuVm7Cou2x9afXECO4rEz9OAcIAUfdhp0Z2a9GFDxopW84Zd/owdVwx7qFvJQ9ejbZg2rHlAVigS2xBAJrMZEhA79YBv1fG/khu6BxYi81HZEJqR77gy9RL4c7fheHZJDW2IiRLF//Btwyxu+Wqffje04hjsO/NbIDGOerNknYTaMYyIAAAAASUVORK5CYII="
+		, uri_cross		: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAtCAMAAAGVAUkAAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAtUExURQAAAD8/PyoqKioqKicnJyUlJSUlJSYmJiYmJiUlJSUlJSUlJSUlJSUlJSYmJvl4FQgAAAAOdFJOUwAEDBhUWGBwd7/D09f7tQnJcwAAAAlwSFlzAAAXEQAAFxEByibzPwAAAYBJREFUOE+FkwF2gzAMQzNYy0Yp9z/uLFkhNkk6vY7Y8l+wA5Sq0372ZxdcPcaVHmIJBfwCZtBZVgZlo20hc8JOMlDE0JO8jHXuvhiyn0wM/1biIZMaeqIQgDZAeCgh4LuJteTXEv+3/c0latMmEge0cdvuJmQseDdeYBg7Q4HL1aPJC1AwITcPZZKbUOjKDY5lUoFxnYoxCmszIRR84jXf3U7kk85FAbWpSdss+HZE9HHH5vPgzF9oV58uO4l+c6Mf3eZn9/Kp5kY/us3Pbik/boe5IL+bKfmXm3x1xmvza79trujGeaMb/SeD2q98i+xND1PQ57M9gktfT/zli7Tk92CoR5iu05PfRxVa32c4iseF+5QTvBYdfyiDOryi0OvLjKV9Yjc8ou86+BgfolCPT1Eo43q7qA6FEn5piEI9PkWhjH9E81im4WOSbig0wwcoNMLzufbnHtQ/gineo9AQH6NQj6/4DF39uQZcReE9CgkPRcPHKGT4rYiv4B+V8gdsgyznJwkzBgAAAABJRU5ErkJggg=="
 	}
-	var bool_displayQuestions	= false;
-	var bool_viewingSolution	= false;
-	var bool_searchingTextbook	= false;
-	var int_iconFrameSize		= 48;
-	var int_iconSize			= 20;
-	var int_iconToTextPadding	= 10;
-	var int_leftPadding			= int_iconFrameSize + int_iconToTextPadding;
+	var bool_displayQuestions			= false;
+	var bool_viewingSolution			= false;
+	var bool_searchingTextbook			= false;
+	var int_iconFrameSize				= 48;
+	var int_iconSize					= 20;
+	var int_iconToTextPadding			= 10;
+	var int_searchMaskPercentOpacity	= 30;
+	var int_leftPadding					= int_iconFrameSize + int_iconToTextPadding;
 	
 	function view_formatTextLarge(jp, bool_bold = true) {
 		
@@ -578,7 +582,7 @@ function class_sladerClient() {
 			
 		}, function() {
 			
-			$(jdiv_applyEffectTo).css("backgroundColor", kvp_colors.css_white);
+			$(jdiv_applyEffectTo).css("backgroundColor", kvp_colors.css_whiteBg);
 		});
 	}
 	function view_addBackHeader(str_title, str_subtitle, anon_onClick) {
@@ -640,7 +644,8 @@ function class_sladerClient() {
 		
 		{ $("body").append(
 			
-			  '<div id="div_search">'
+			  '<div id="div_searchDummy"></div>'
+			+ '<div id="div_search">'
 			+     '<div id="div_imgSearchWrapper">'
 			+         '<img id="img_search" src="' + html_iconSearch + '">'
 			+     '</div>'
@@ -664,12 +669,19 @@ function class_sladerClient() {
 			}
 		});
 		$("#div_imgSearchWrapper").click(function() { $("#intext").focus(); });
-		
+		$("#div_searchDummy").css({
+			
+			"height"	: int_iconFrameSize.toString() + "px"
+		});
 		$("#div_search").css({
 			
-			"border-bottom"	: "1px solid",
-			"display"		: "flex",
-			"flex-direction": "row"
+			"background-color"	: kvp_colors.css_whiteBg,
+			"border-bottom"		: "1px solid",
+			"display"			: "flex",
+			"flex-direction"	: "row",
+			"position"			: "absolute",
+			"top"				: "0",
+			"width"				: "100%"
 		});
 		$("#div_imgSearchWrapper").css({
 			
@@ -702,51 +714,49 @@ function class_sladerClient() {
 		if (def(str_query)) $("#intext").val(str_query);
 		$("#intext").focus();
 	}
-	function view_pageTextbookResults() {
+	function view_clearTextbookResults() {
 		
-		clearBody();
+		$("#div_searchMask").remove();
+		$("#div_noResults").remove();
+		$.each($(".div_textbook"), function(i, div_textbook) {
+			
+			$(div_textbook).remove();
+		});
+		$("#img_search").attr("src", kvp_images.uri_search);
+		$("#div_imgSearchWrapper").click(function() { $("#intext").focus(); });
+	}
+	function view_addTextbookResults() {
+		
 		bool_searchingTextbook = false;
-		view_addTextbookSearch(kvp_query.str_query);
-		document.title = "\"" + kvp_query.str_query + "\"";
+		view_clearTextbookResults();
 		
-		var str_noResultsSubtitle	= (
+		{ var str_noResultsSubtitle	= (
 			
 			"No results for \""
-			+ kvp_textbook.str_query
+			+ kvp_query.str_query
 			+ "\""
-		);
+			
+		); }
+		var int_resultTop = int_iconFrameSize;
 		
-		if (kvp_query.textbooks.length == 0) {
+		$("body").append('<div id="div_searchMask"></div>');
+		$("#div_searchMask").css({
 			
-			{ $("body").append(
-				
-				  '<div id="div_noResults">'
-				+     '<div id="div_noResultsDetailWrapper">'
-				+         '<p id="p_noResultsSubtitle">'
-				+		      str_noResultsSubtitle
-				+         '</p>'
-				+     '</div>'
-				+ '</div>'
-				
-			); }
-			$("#div_noResults").css({
-				
-				"border-bottom"	: "1px solid " + kvp_colors.css_grayLine,
-				"cursor"		: "pointer",
-				"display"		: "flex"
-			});
-			$("#div_noResultsDetailWrapper").css({
-				
-				"display"			: "flex",
-				"flex-direction"	: "column",
-				"height"			: int_iconFrameSize.toString() + "px",
-				"justify-content"	: "center",
-				"padding-left"		: int_leftPadding.toString() + "px"
-			});
+			"background-color"	: kvp_colors.css_black,
+			"height"			: "100%",
+			"opacity"			: "0." + int_searchMaskPercentOpacity.toString(),
+			"position"			: "absolute",
+			"top"				: "0",
+			"width"				: "100%",
+			"z-index"			: 0
+		});
+		$("#div_search").css({
 			
-			view_formatTextLarge($("#p_noResultsTitle"));
-			view_formatTextSmall($("#p_noResultsSubtitle"));
-		}
+			"z-index"	: (kvp_query.textbooks.length + 3).toString()
+		});
+		$("#img_search").attr("src", kvp_images.uri_cross);
+		$("#div_imgSearchWrapper").click(function() { view_clearTextbookResults(); });
+		
 		$.each(kvp_query.textbooks, function(i, kvp_textbook) {
 			
 			{ $("body").append(
@@ -773,9 +783,14 @@ function class_sladerClient() {
 			
 			$(".div_textbook").eq(i).css({
 				
-				"border-bottom"	: "1px solid " + kvp_colors.css_grayLine,
-				"cursor"		: "pointer",
-				"display"		: "flex"
+				"background-color"	: kvp_colors.css_whiteBg,
+				"border-bottom"		: "1px solid " + kvp_colors.css_grayLine,
+				"cursor"			: "pointer",
+				"display"			: "flex",
+				"position"			: "absolute",
+				"top"				: int_resultTop.toString() + "px",
+				"width"				: "100%",
+				"z-index"			: (kvp_query.textbooks.length - i + 1).toString()
 			});
 			$(".div_imgBookThumb").eq(i).css({
 				
@@ -793,8 +808,46 @@ function class_sladerClient() {
 			
 			view_formatTextLarge($(".p_textbookTitle").eq(i));
 			view_formatTextSmall($(".p_textbookSubtitle").eq(i));
+			
+			int_resultTop += int_iconFrameSize;
 		});
+		if (kvp_query.textbooks.length == 0) {
+			
+			{ $("body").append(
+				
+				  '<div id="div_noResults">'
+				+     '<div id="div_noResultsDetailWrapper">'
+				+         '<p id="p_noResultsSubtitle">'
+				+		      str_noResultsSubtitle
+				+         '</p>'
+				+     '</div>'
+				+ '</div>'
+				
+			); }
+			$("#div_noResults").css({
+				
+				"background-color"	: kvp_colors.css_whiteBg,
+				"border-bottom"		: "1px solid " + kvp_colors.css_grayLine,
+				"display"			: "flex",
+				"position"			: "absolute",
+				"top"				: int_resultTop.toString() + "px",
+				"width"				: "100%",
+				"z-index"			: (kvp_query.textbooks.length + 1).toString()
+			});
+			$("#div_noResultsDetailWrapper").css({
+				
+				"display"			: "flex",
+				"flex-direction"	: "column",
+				"height"			: int_iconFrameSize.toString() + "px",
+				"justify-content"	: "center",
+				"padding-left"		: int_leftPadding.toString() + "px"
+			});
+			
+			view_formatTextLarge($("#p_noResultsTitle"));
+			view_formatTextSmall($("#p_noResultsSubtitle"));
+		}
 	}
+	
 	function view_pageTextbookContents() {
 		
 		view_addTextbookSearch();
