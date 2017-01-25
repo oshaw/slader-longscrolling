@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    0.3.5
+// @version    		    0.3.6
 // @author				Oscar Shaw
 // @include				*://slader.*
 // @grant				GM_xmlhttpRequest
@@ -98,6 +98,17 @@ function clearBody()	     {
 	window.stop();
 	$("body").html("");
 }
+function titleCase(str)		 {
+	
+    return str.replace(
+	
+		/\w\S*/g,
+		function(txt) {
+			
+			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+		}
+	);
+}
 
 function class_sladerClient() {
 	
@@ -133,13 +144,11 @@ function class_sladerClient() {
 	function model_getTextbookResults(str_query) {
 		
 		if (!def(str_query)) return;
-		console.log(str_query);
 		kvp_query = {
 			
 			str_query: str_query,
 			textbooks: []
 		}
-		
 		GM_xmlhttpRequest({
 			
 			method: "POST",
@@ -395,19 +404,29 @@ function class_sladerClient() {
 						$("<div/>").html(kvp.responseText)
 						.find("article")
 					);
-					
 					$.each(jartcs_solutions, function(i, artc_solution) {
 						
-						kvp_textbook.chapters[int_chapter]
+						{ kvp_textbook.chapters[int_chapter]
 							.sections[int_section].questions[int_question]
-							.solutions.push({ steps: [] });
+							.solutions.push({ steps: [] }); }
 							
+						{ var kvp_solution = (
+						
+							kvp_textbook
+							.chapters[int_chapter].sections[int_section]
+							.questions[int_question].solutions[i]
+						); }
+						{ kvp_solution.str_answerer = titleCase(
+							
+							$(artc_solution).find(".profile-name").eq(0)
+							.text()
+						); }
 						var jartc_solution = $("<div/>").html(artc_solution);
-						var jdivs_steps = (
+						
+						{ var jdivs_steps = (
 						
 							jartc_solution.find(".solution-row.explanation-row")
-						);
-						
+						); }
 						$.each(jdivs_steps, function(j, div_step) {
 							
 							kvp_textbook
@@ -489,19 +508,12 @@ function class_sladerClient() {
 							});
 						});
 						
-						var jlmts_answerElements = (
+						{ var jlmts_answerElements = (
 						
 							jartc_solution
 							.find(".solution-row.result-row").eq(0)
 							.find(".solution-content").eq(0).children()
-						);
-						var kvp_solution = (
-						
-							kvp_textbook
-							.chapters[int_chapter].sections[int_section]
-							.questions[int_question].solutions[i]
-						);
-						
+						); }
 						$.each(jlmts_answerElements, function(j, lmt) {
 							
 							switch (lmt.tagName) {
@@ -1160,6 +1172,10 @@ function class_sladerClient() {
 				
 				"padding-right"	: "10px"
 			});
+			$("#" + i).find("img").eq(0).css({
+				
+				"padding-top"	: "4px"
+			});
 		}
 	}
 	function view_pageSolutions() {
@@ -1211,6 +1227,26 @@ function class_sladerClient() {
 			
 			$("body").append('<div class="div_solution"></div>');
 			var jdiv_solution = $(".div_solution").eq(i);
+			
+			{ jdiv_solution.append(
+			
+				  '<p class="p_answerer">Solution by "'
+				+ kvp_solution.str_answerer
+				+ '"</p>'
+				
+			); }
+			{ view_formatTextSmall(
+			
+				jdiv_solution.find(".p_answerer").eq(0)
+				
+			, true); }
+			jdiv_solution.find(".p_answerer").eq(0).css({
+				
+				"padding-top"		: "5px",
+				"padding-bottom"	: "5px",
+				"padding-left"		: int_leftPadding.toString() + "px"
+			});
+			
 			$.each(kvp_solution.steps, function(j, kvp_step) {
 				
 				{ jdiv_solution.append(
@@ -1228,16 +1264,19 @@ function class_sladerClient() {
 					"flex-direction"	: "row",
 					"padding-top"		: "5px",
 					"padding-bottom"	: "5px",
-					"padding-left"		: "55px"
+					"padding-left"		: "55px",
+					"width"				: "100%"
 				});
 				jdiv_solution.find(".p_stepNumber").eq(j).css({
 					
 					"padding-right"	: "20px"
 				});
+				
 				view_formatTextLarge(jdiv_solution.find(".p_stepNumber").eq(j));
 				view_formatTintBgOnHover(jdiv_solution.find(".div_step").eq(j));
 				
 				var jdiv_step = jdiv_solution.find(".div_stepContent").eq(j);
+				
 				if (def(kvp_step.str_explain) || def(kvp_step.url_imgExplain)) {
 					
 					{ jdiv_solution.find(".div_stepContent").eq(j).append(
@@ -1259,10 +1298,26 @@ function class_sladerClient() {
 					}); }
 					
 					jdiv_step = jdiv_solution.find(".div_work").eq(j);
+					jdiv_solution.find(".div_explain").eq(j).css({
+						
+						"max-width"		: (
+							
+							(
+								$(window).width()
+								- int_iconFrameSize
+								- int_iconToTextPadding
+								- jdiv_solution.find(".p_stepNumber")
+								  .eq(j).width()
+								  
+							) / 2
+							
+						).toString() + "px"
+					});
+					
 					if (def(kvp_step.str_explain)) {
 						
 						jdiv_solution.find(".div_explain").eq(j).append(kvp_step.str_explain);
-					
+						
 					} else {
 						
 						jdiv_solution.find(".div_explain").eq(j).append(
@@ -1275,6 +1330,22 @@ function class_sladerClient() {
 						});
 					}
 				}
+				
+				jdiv_step.find("img").eq(0).css({
+					
+					"max-width"		: (
+						
+						(
+							$(window).width()
+							- int_iconFrameSize
+							- int_iconToTextPadding
+							- jdiv_solution.find(".p_stepNumber")
+							  .eq(j).width()
+							  
+						) / 2
+						
+					).toString() + "px"
+				});
 				if (def(kvp_step.str_work)) {
 					
 					jdiv_step.append(kvp_step.str_work);
