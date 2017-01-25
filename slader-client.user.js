@@ -104,10 +104,10 @@ function class_sladerClient() {
 	var kvp_textbook			= { chapters: [] }
 	var kvp_query				= {}
 	var url_base				= "http://slader.com";
-	var int_textbook			= -1;
 	var int_chapter				= -1;
 	var int_section				= -1;
 	var int_question			= -1;
+	var int_searchResults		= 20;
 	var bool_getLargeImages		= false;
 	
 	function func_dirToHeader(url) {
@@ -154,7 +154,8 @@ function class_sladerClient() {
 			data: (
 			
 				'{"requests":[{"indexName":"textbook_index",\
-				"params":"query=' + kvp_query.str_query + '&hitsPerPage=5&page=0"}]}'
+				"params":"query=' + kvp_query.str_query
+				+ '&hitsPerPage=' + int_searchResults + '&page=0"}]}'
 			),
 			onload: function(kvp) {
 				
@@ -726,6 +727,11 @@ function class_sladerClient() {
 			
 			$(div_textbook).remove();
 		});
+		
+		$("body").css({
+			
+			"overflow"	: "scroll"
+		});
 		$("#img_search").attr("src", kvp_images.uri_search);
 		$("#div_imgSearchWrapper").click(function() { $("#intext").focus(); });
 	}
@@ -741,29 +747,46 @@ function class_sladerClient() {
 			+ "\""
 			
 		); }
-		var int_resultTop = int_iconFrameSize;
 		
-		$("body").append('<div id="div_searchMask"></div>');
+		{ $("body").append(
+		
+			  '<div id="div_searchResultsWrapper"></div>'
+			+ '<div id="div_searchMask"></div>'
+		); }
 		$("#div_searchMask").css({
 			
 			"background-color"	: kvp_colors.css_black,
 			"height"			: "100%",
 			"opacity"			: "0." + int_searchMaskPercentOpacity.toString(),
 			"position"			: "absolute",
-			"top"				: "0",
+			"top"				: int_iconFrameSize.toString() + "px",
 			"width"				: "100%",
 			"z-index"			: 0
+		});
+		$("#div_searchResultsWrapper").css({
+			
+			"height"			: "100%",
+			"overflow"			: "scroll",
+			"position"			: "absolute",
+			"top"				: int_iconFrameSize.toString() + "px",
+			"width"				: "100%",
+			"z-index"			: 1
 		});
 		$("#div_search").css({
 			
 			"z-index"	: (kvp_query.textbooks.length + 3).toString()
 		});
+		$("body").css({
+			
+			"overflow"	: "hidden"
+		});
+		
 		$("#img_search").attr("src", kvp_images.uri_cross);
 		$("#div_imgSearchWrapper").click(function() { view_clearTextbookResults(); });
 		
 		$.each(kvp_query.textbooks, function(i, kvp_textbook) {
 			
-			{ $("body").append(
+			{ $("#div_searchResultsWrapper").append(
 				
 				  '<div class="div_textbook">'
 				+     '<div class="div_imgBookThumb"></div>'
@@ -791,10 +814,7 @@ function class_sladerClient() {
 				"border-bottom"		: "1px solid " + kvp_colors.css_grayLine,
 				"cursor"			: "pointer",
 				"display"			: "flex",
-				"position"			: "absolute",
-				"top"				: int_resultTop.toString() + "px",
-				"width"				: "100%",
-				"z-index"			: (kvp_query.textbooks.length - i + 1).toString()
+				"width"				: "100%"
 			});
 			$(".div_imgBookThumb").eq(i).css({
 				
@@ -812,8 +832,6 @@ function class_sladerClient() {
 			
 			view_formatTextLarge($(".p_textbookTitle").eq(i));
 			view_formatTextSmall($(".p_textbookSubtitle").eq(i));
-			
-			int_resultTop += int_iconFrameSize;
 		});
 		if (kvp_query.textbooks.length == 0) {
 			
@@ -854,6 +872,7 @@ function class_sladerClient() {
 	
 	function view_pageTextbookContents() {
 		
+		view_clearTextbookResults();
 		view_addTextbookSearch();
 		document.title = kvp_textbook.str_name;
 		
