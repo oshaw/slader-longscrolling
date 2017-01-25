@@ -541,7 +541,7 @@ function class_sladerClient() {
 	}
 	var bool_displayQuestions	= false;
 	var bool_viewingSolution	= false;
-	
+	var bool_searchingTextbook	= false;
 	var int_iconFrameSize		= 48;
 	var int_iconSize			= 20;
 	var int_iconToTextPadding	= 10;
@@ -653,8 +653,11 @@ function class_sladerClient() {
 		
 		$(document).keypress(function(int_keycode) {
 			
-			if (int_keycode.which == 13 && $("#intext").is(':focus')) {
+			if (int_keycode.which == 13
+				&& $("#intext").is(':focus')
+				&& !bool_searchingTextbook) {
 				
+				bool_searchingTextbook = true;
 				model_getTextbookResults($("#intext").val());
 			}
 		});
@@ -700,9 +703,48 @@ function class_sladerClient() {
 	function view_pageTextbookResults() {
 		
 		clearBody();
+		bool_searchingTextbook = false;
 		view_addTextbookSearch(kvp_model.str_query);
 		document.title = "\"" + kvp_model.str_query + "\"";
 		
+		var str_noResultsSubtitle	= (
+			
+			"No results for \""
+			+ kvp_model.str_query
+			+ "\""
+		);
+		
+		if (kvp_model.textbooks.length == 0) {
+			
+			{ $("body").append(
+				
+				  '<div id="div_noResults">'
+				+     '<div id="div_noResultsDetailWrapper">'
+				+         '<p id="p_noResultsSubtitle">'
+				+		      str_noResultsSubtitle
+				+         '</p>'
+				+     '</div>'
+				+ '</div>'
+				
+			); }
+			$("#div_noResults").css({
+				
+				"border-bottom"	: "1px solid " + kvp_colors.css_grayLine,
+				"cursor"		: "pointer",
+				"display"		: "flex"
+			});
+			$("#div_noResultsDetailWrapper").css({
+				
+				"display"			: "flex",
+				"flex-direction"	: "column",
+				"height"			: int_iconFrameSize.toString() + "px",
+				"justify-content"	: "center",
+				"padding-left"		: int_leftPadding.toString() + "px"
+			});
+			
+			view_formatTextLarge($("#p_noResultsTitle"));
+			view_formatTextSmall($("#p_noResultsSubtitle"));
+		}
 		$.each(kvp_model.textbooks, function(i, kvp_textbook) {
 			
 			{ $("body").append(
@@ -1173,19 +1215,23 @@ function class_sladerClient() {
 		});
 	}
 	
-	{ $("head").html("<style>\
-		\
-		* {\
+	function main() {
+		
+		{ $("head").html("<style>\
 			\
-			margin:			0px;\
-			padding:		0px;\
-		}\
-		\
-	</style>"); }
-	document.title = "Slader Client";
-	clearBody();
-	
-	view_addTextbookSearch();
+			* {\
+				\
+				margin:			0px;\
+				padding:		0px;\
+			}\
+			\
+		</style>"); }
+		document.title = "Slader Client";
+		clearBody();
+		
+		view_addTextbookSearch();
+		
+	} main();
 }
 function main() {
 	
@@ -1196,3 +1242,6 @@ function main() {
 
 console.log("Compiled");
 main();
+
+
+
