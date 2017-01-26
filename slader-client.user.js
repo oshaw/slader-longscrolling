@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        		slader-client
 // @namespace   		https://greasyfork.org/en/users/94062-oshaw
-// @version    		    1.0.0
+// @version    		    1.0.1
 // @description			A lightweight AJAX client for Slader
 // @author				Oscar Shaw
 // @include				*://slader.*
@@ -45,14 +45,7 @@ function numeric(char_input) {
 	
 	return ("1234567890".indexOf(char_input) != -1); 
 }
-function get(url, anon)      {
-	
-	var xhr	= new XMLHttpRequest();
-	xhr.onload = function() { anon(this.responseText); };
-	xhr.open("GET", url, true);
-	xhr.send();
-}
-function gmGet(url, anon)    {
+function get(url, anon)    {
 	
 	GM_xmlhttpRequest({
 		
@@ -189,7 +182,7 @@ function class_sladerClient() {
 	}
 	function model_getTextbookContents(int_textbookIndex) {
 		
-		gmGet(kvp_query.textbooks[int_textbookIndex].url_path, function(html) {
+		get(kvp_query.textbooks[int_textbookIndex].url_path, function(html) {
 			
 			var jsects_chapters = (
 			
@@ -313,7 +306,7 @@ function class_sladerClient() {
 	}
 	function model_getQuestionsOnPage(url, str_header, int_page, anon_callback) {
 		
-		gmGet(url, function(html) {
+		get(url, function(html) {
 			
 			var jdivs_questions = $("<div/>").html(html).find(".list").children();
 			var bool_inSection = false;
@@ -387,7 +380,7 @@ function class_sladerClient() {
 			.sections[int_section].questions[int_question].url_solutions
 		);
 		
-		gmGet(url_solution, function(html) {
+		get(url_solution, function(html) {
 			
 			GM_xmlhttpRequest({
 				
