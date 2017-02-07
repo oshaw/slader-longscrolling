@@ -45,7 +45,7 @@ function numeric(char_input) {
 	
 	return ("1234567890".indexOf(char_input) != -1); 
 }
-function get(url, anon)    {
+function get(url, anon)      {
 	
 	GM_xmlhttpRequest({
 		
@@ -723,7 +723,6 @@ function class_sladerClient() {
 		});
 		
 		if (def(str_query)) $("#intext").val(str_query);
-		$("#intext").focus();
 	}
 	function view_clearTextbookResults() {
 		
@@ -1426,6 +1425,7 @@ function class_sladerClient() {
 		clearBody();
 		
 		view_addTextbookSearch();
+		$("#intext").focus();
 		
 	} main();
 }
