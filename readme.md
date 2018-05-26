@@ -1,4 +1,4 @@
-# Slader Infinite
+# [Slader Infinite](https://greasyfork.org/en/scripts/26910-slader-infinite)
 Browse textbook answers on Slader.com in faster, cleaner interface. Loads all textbook solutions on one page without needing to go to another link to browse the next page.
 
 Displays slader.com textbook solutions as a long-scrolling RESTful client. GreaseMonkeys, jQuery
