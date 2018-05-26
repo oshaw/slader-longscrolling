@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         slader-infinite
 // @namespace    https://greasyfork.org/en/users/94062-oshaw
-// @version      1.0.1
-// @description  Lightweight AJAX client for slader.com
+// @version      2.0.1
+// @description  Browse textbook answers on Slader.com in faster, cleaner interface.
 // @author       Oscar Shaw
 // @include      *://slader.*
 // @grant        GM_xmlhttpRequest
@@ -401,9 +401,10 @@ function class_sladerClient() {
     css_black: "rgb(38, 38, 38)",
     css_graySearch: "rgb(127, 127, 127)",
     css_grayText: "rgb(191, 191, 191)",
-    css_grayMask: "rgb(191, 191, 191)",
+    css_blueMask: "rgb(229, 241, 255)",
     css_grayLine: "rgb(217, 217, 217)",
-    css_grayBg: "rgb(242, 242, 242)",
+    css_blueBg: "rgb(229, 241, 255)",
+    css_grayBg: "rgb(237, 237, 237)",
     css_whiteBg: "rgb(255, 255, 255)"
   }
   var kvp_images = {
@@ -434,7 +435,15 @@ function class_sladerClient() {
       "font-size": "12px"
     });
   }
-  function view_formatTintBgOnHover(jdiv, jdiv_applyEffectTo = null) {
+  function view_formatBlueBgOnHover(jdiv, jdiv_applyEffectTo = null) {
+    if (!def(jdiv_applyEffectTo)) jdiv_applyEffectTo = jdiv;
+    jdiv.hover(function() {
+      $(jdiv_applyEffectTo).css("backgroundColor", kvp_colors.css_blueBg);
+    }, function() {
+      $(jdiv_applyEffectTo).css("backgroundColor", kvp_colors.css_whiteBg);
+    });
+	}
+	function view_formatGrayBgOnHover(jdiv, jdiv_applyEffectTo = null) {
     if (!def(jdiv_applyEffectTo)) jdiv_applyEffectTo = jdiv;
     jdiv.hover(function() {
       $(jdiv_applyEffectTo).css("backgroundColor", kvp_colors.css_grayBg);
@@ -518,8 +527,8 @@ function class_sladerClient() {
     $("#div_search").css({
       "background-color": kvp_colors.css_whiteBg,
       "border-bottom": "1px solid",
-      "display": "flex",
-      "flex-direction": "row",
+			"display": "flex",
+			"flex-direction": "row",
       "position": "absolute",
       "top": "0",
       "width": "100%"
@@ -544,7 +553,8 @@ function class_sladerClient() {
     });
     $("#intext").css({
       "border-style": "none",
-      "height": "100%",
+			"font-size": "1em",
+			"height": "100%",
       "width": "100%"
     });
     if (def(str_query)) $("#intext").val(str_query);
@@ -627,7 +637,7 @@ function class_sladerClient() {
       $(".div_textbook").eq(i).click(function() {
         model_getTextbookContents(i);
       });
-      view_formatTintBgOnHover($(".div_textbook").eq(i));
+      view_formatGrayBgOnHover($(".div_textbook").eq(i));
       $(".div_textbook").eq(i).css({
         "background-color": kvp_colors.css_whiteBg,
         "border-bottom": "1px solid " + kvp_colors.css_grayLine,
@@ -704,7 +714,7 @@ function class_sladerClient() {
       + '</div>'
     ); }
     $("#div_selectedBookBar").css({
-      "background-color": kvp_colors.css_grayBg,
+      "background-color": kvp_colors.css_blueBg,
       "display": "flex"
     });
     $("#div_imgSelectedBookThumb").css({
@@ -773,7 +783,7 @@ function class_sladerClient() {
         jdiv_chapter.find(".p_sectionNumber").eq(j).css({
           "padding-right": "10px"
         });
-        view_formatTintBgOnHover(jdiv_chapter.find(".div_section").eq(j));
+        view_formatGrayBgOnHover(jdiv_chapter.find(".div_section").eq(j));
         view_formatTextLarge(jdiv_chapter.find(".p_sectionNumber").eq(j));
         view_formatTextSmall(jdiv_chapter.find(".p_sectionName").eq(j));
         if (!def($(".div_chapter").eq(i)
@@ -862,10 +872,10 @@ function class_sladerClient() {
       { div_question.innerHTML += (
         (def(kvp_question.str_answer))
         ? '<p>' + kvp_question.str_answer + '</p>'
-: '<img src=' + kvp_question.url_imgAnswer + '>'
+				: '<img src=' + kvp_question.url_imgAnswer + '>'
       ); }
       view_formatTextLarge($("#" + i).find(".p_number").eq(0));
-      view_formatTintBgOnHover($("#" + i));
+      view_formatBlueBgOnHover($("#" + i));
       $("#" + i).css({
         "cursor": "pointer",
         "display": "flex",
@@ -949,7 +959,7 @@ function class_sladerClient() {
           "padding-right": "20px"
         });
         view_formatTextLarge(jdiv_solution.find(".p_stepNumber").eq(j));
-        view_formatTintBgOnHover(jdiv_solution.find(".div_step").eq(j));
+        view_formatGrayBgOnHover(jdiv_solution.find(".div_step").eq(j));
         var jdiv_step = jdiv_solution.find(".div_stepContent").eq(j);
         if (def(kvp_step.str_explain) || def(kvp_step.url_imgExplain)) {
           { jdiv_solution.find(".div_stepContent").eq(j).append(
@@ -1034,7 +1044,7 @@ function class_sladerClient() {
         "padding-right": "20px"
       });
       view_formatTextLarge($(".p_answerNumber").eq(i));
-      view_formatTintBgOnHover($(".div_answer").eq(i));
+      view_formatGrayBgOnHover($(".div_answer").eq(i));
       if (def(kvp_solution.str_answer)) {
         $(".div_answerContent").eq(i).append(kvp_solution.str_answer);
       } else {
@@ -1048,13 +1058,14 @@ function class_sladerClient() {
     { $("head").html("<style>\
       * {\
         margin: 0px;\
-        padding: 0px;\
+				padding: 0px;\
+				font-family: Helvetica, Opens Sans, Sans-Serif;\
       }\
     </style>"); }
     $("body").css({
       "overflow-x": "hidden"
     });
-    document.title = "Slader Client";
+    document.title = "Slader Infinite";
     clearBody();
     view_addTextbookSearch();
     $("#intext").focus();
