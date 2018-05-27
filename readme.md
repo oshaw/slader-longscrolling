@@ -1,7 +1,9 @@
 <h1 align="center">
   Slader Infinite
   <br>
+  <br>
   <img src="/demo.gif?raw=true" height="400">
+  <br>
   <br>
 </h1>
 
