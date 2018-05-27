@@ -1,8 +1,8 @@
 <h1 align="center">
-  <a href="https://greasyfork.org/en/scripts/26910-slader-infinite">Slader Infinite</a>
-  <br>
+  Slader Infinite
   <br>
   <img src="/demo.gif?raw=true" height="400">
+  <br>
 </h1>
 
 Loads all textbook solutions on one page without needing to go to another link to browse the next page. Displays slader.com textbook solutions as a long-scrolling RESTful client. GreaseMonkeys, jQuery
