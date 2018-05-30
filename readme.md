@@ -13,4 +13,4 @@ Loads all textbook solutions on one page without needing to go to another link t
 2. Install the script on [GreasyFork](https://greasyfork.org/en/scripts/26910-slader-infinite).
 3. If a page asking whether to allow cross-domain resource opens, click "Always allow" to allow cross-origin requests.
 ## Usage
-Navigate to slader.com. To browse slader.com without Slader Infinite, naviagte to **www**.slader.com.
+Navigate to slader.com. To browse slader.com without Slader Infinite, navigate to **www**.slader.com.
