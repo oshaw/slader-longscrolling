@@ -1,5 +1,5 @@
 <h1 align="center">
-  Slader Infinite
+  Slader long-scrolling client
   <br>
   <br>
   <img src="/demo.gif?raw=true" height="400">
